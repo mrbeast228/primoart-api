@@ -1,0 +1,12 @@
+# IDEA files
+.idea/
+
+# PostgreSQL data
+pgdata/*
+
+# Clickhouse data
+clickhouse/data/*
+clickhouse/logs/*
+
+# Python cache
+**/__pycache__/

@@ -43,13 +43,18 @@ class GET(APICore):
 
 
         @app.get("/transactions/{transaction_id}/steps")
-        async def get_transaction_steps(transaction_id: str):
+        @app.get("/steps")
+        async def get_transaction_steps(transaction_id: str = ''):
             try:
-                self.validate_uuid4(transaction_id)
+                # make it possible to get list of ALL steps (not only for single transaction) for MVP
+                if transaction_id:
+                    self.validate_uuid4(transaction_id)
+                    transaction_steps = ORM.Step_Info.select().where(
+                        ORM.Step_Info.transactionid == transaction_id)
+                else:
+                    transaction_steps = ORM.Step_Info.select()
 
-                transaction_steps = ORM.Step_Info.select().where(
-                    ORM.Step_Info.transactionid == transaction_id)
-                if not transaction_steps:
+                if transaction_id and not transaction_steps:
                     return JSONResponse(content={'error': 'Transaction steps not found!'}, status_code=404)
 
                 subresult = [ORM.BaseModel.extract_data_from_select_dict(step.__dict__)
@@ -87,12 +92,13 @@ class GET(APICore):
                     self.validate_uuid4(transaction_id)
                 self.validate_uuid4(step_id)
 
-                step_runs = ORM.Step_Run.select().where(ORM.Step_Run.stepid == step_id)
+                step_runs = ORM.Step_Run.select()\
+                    .where(ORM.Step_Run.stepid == step_id).order_by(ORM.Step_Run.runend)
                 if not step_runs:
                     return JSONResponse(content={'error': 'Step runs not found!'}, status_code=404)
 
                 subresult = [ORM.BaseModel.extract_data_from_select_dict(run.__dict__)
-                             for run in step_runs]
+                             for run in step_runs][::-1] # Clickhouse doesn't support desc() in ORM :(
                 return JSONResponse(content={'step_runs': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -125,12 +131,12 @@ class GET(APICore):
                 self.validate_uuid4(transaction_id)
 
                 transaction_runs = ORM.Transaction_Run.select().where(
-                    ORM.Transaction_Run.transactionid == transaction_id)
+                    ORM.Transaction_Run.transactionid == transaction_id).order_by(ORM.Transaction_Run.runend)
                 if not transaction_runs:
                     return JSONResponse(content={'error': 'Transaction runs not found!'}, status_code=404)
 
                 subresult = [ORM.BaseModel.extract_data_from_select_dict(run.__dict__)
-                             for run in transaction_runs]
+                             for run in transaction_runs][::-1] # Clickhouse doesn't support desc() in ORM :(
                 return JSONResponse(content={'runs': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -164,12 +170,13 @@ class GET(APICore):
                     self.validate_uuid4(transaction_id)
                 self.validate_uuid4(run_id)
 
-                run_steps = ORM.Step_Run.select().where(ORM.Step_Run.transactionrunid == run_id)
+                run_steps = ORM.Step_Run.select()\
+                    .where(ORM.Step_Run.transactionrunid == run_id).order_by(ORM.Step_Run.runend)
                 if not run_steps:
                     return JSONResponse(content={'error': 'Run steps not found!'}, status_code=404)
 
                 subresult = [ORM.BaseModel.extract_data_from_select_dict(step.__dict__)
-                             for step in run_steps]
+                             for step in run_steps][::-1] # Clickhouse doesn't support desc() in ORM :(
                 return JSONResponse(content={'step_runs': self.json_reserialize(subresult)})
 
             except Exception as e:

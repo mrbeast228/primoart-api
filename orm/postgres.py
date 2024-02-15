@@ -1,3 +1,5 @@
+import sys
+import time
 import peewee
 from orm.config import config
 
@@ -5,6 +7,9 @@ db = peewee.PostgresqlDatabase('primoart')
 
 
 class BaseModel(peewee.Model):
+	print("Waiting for database to be ready...", file=sys.stderr)
+	time.sleep(1)
+
 	@staticmethod
 	def extract_data_from_select_dict(dict):
 		return dict['__data__']
@@ -31,8 +36,6 @@ class Transaction(BaseModel):
 	createddatetime = peewee.DateTimeField()
 	createdby = peewee.CharField(max_length=1000, null=True)
 	state = peewee.CharField(max_length=1000, null=True)
-	lastruntime = peewee.DateTimeField(null=True)
-	lastrunresult = peewee.CharField(max_length=1000, null=True)
 
 	class Meta:
 		table_name = 'transactions'
@@ -58,8 +61,6 @@ class Step_Info(BaseModel):
 	description = peewee.CharField(max_length=1000)
 	createddatetime = peewee.DateTimeField()
 	createdby = peewee.CharField(max_length=1000)
-	lastruntime = peewee.DateTimeField(null=True)
-	lastrunresult = peewee.CharField(max_length=1000, null=True)
 
 	class Meta:
 		table_name = 'step_info'
@@ -78,3 +79,6 @@ class Step_Run(BaseModel):
 
 	class Meta:
 		table_name = 'step_runs'
+
+# auto create schemas and tables
+db.create_tables([Transaction, Transaction_Run, Step_Info, Step_Run])

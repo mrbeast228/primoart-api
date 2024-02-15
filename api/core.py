@@ -14,8 +14,9 @@ class APICore:
                 return str(obj)
             return json.JSONEncoder.default(self, obj)\
 
-    def json_reserialize(self, obj):
-        return json.loads(json.dumps(obj, cls=self.CustomJSONEncoder))
+    @classmethod
+    def json_reserialize(cls, obj):
+        return json.loads(json.dumps(obj, cls=cls.CustomJSONEncoder))
 
     @staticmethod
     def validate_uuid4(uuid_string):

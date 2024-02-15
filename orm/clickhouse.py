@@ -1,3 +1,4 @@
+import sys
 import time
 import infi.clickhouse_orm as click
 from orm.config import config
@@ -5,8 +6,10 @@ from orm.config import config
 
 # here BaseModel not only model but also compatibility layer with the most used peewee methods
 class BaseModel(click.Model):
+    print("Waiting for database to be ready...", file=sys.stderr)
+    time.sleep(3) # clickhouse is slower to start
+
     try:
-        time.sleep(0.3) # pause until database initialization completed
         _database = click.Database(config.db_name,
                                db_url=f'http://{config.db_host}:{config.db_port}',
                                username=config.db_user,
@@ -120,8 +123,6 @@ class Transaction(BaseModel):
     createddatetime = click.DateTime64Field(precision=6)
     createdby = click.NullableField(click.StringField())
     state = click.NullableField(click.StringField())
-    lastruntime = click.NullableField(click.DateTime64Field(precision=6))
-    lastrunresult = click.NullableField(click.StringField())
 
     engine = click.MergeTree('createddatetime', ('transactionid',))
 
@@ -134,12 +135,12 @@ class Transaction_Run(BaseModel):
     transactionid = click.UUIDField()
     transactionrunid = click.UUIDField()
     runstart = click.DateTime64Field(precision=6)
-    runend = click.NullableField(click.DateTime64Field(precision=6))
-    runresult = click.NullableField(click.StringField())
+    runend = click.DateTime64Field(precision=6)
+    runresult = click.StringField()
     logid = click.NullableField(click.UUIDField())
     errorcode = click.NullableField(click.Int32Field())
 
-    engine = click.MergeTree(order_by=('transactionid', 'runstart'), partition_key=('transactionid',))
+    engine = click.MergeTree(order_by=('transactionid', 'runend'), partition_key=('transactionid',))
 
     @classmethod
     def table_name(cls):
@@ -153,8 +154,6 @@ class Step_Info(BaseModel):
     description = click.StringField()
     createddatetime = click.DateTime64Field(precision=6)
     createdby = click.StringField()
-    lastruntime = click.NullableField(click.DateTime64Field(precision=6))
-    lastrunresult = click.NullableField(click.StringField())
 
     engine = click.MergeTree('createddatetime', ('stepid',))
 
@@ -174,8 +173,11 @@ class Step_Run(BaseModel):
     screencaptureid = click.UUIDField()
     errorcode = click.Int32Field()
 
-    engine = click.MergeTree(order_by=('stepid', 'transactionrunid', 'runstart'), partition_key=('stepid',))
+    engine = click.MergeTree(order_by=('stepid', 'transactionrunid', 'runend'), partition_key=('stepid',))
 
     @classmethod
     def table_name(cls):
         return 'step_runs'
+
+# auto create tables
+BaseModel.create_tables([Transaction, Transaction_Run, Step_Info, Step_Run])

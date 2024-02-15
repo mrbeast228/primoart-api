@@ -1,17 +1,11 @@
 import uuid
-import time
+import requests
 import wonderwords
 import datetime
 import random
 
+from api.core import APICore
 from orm.config import config
-if config.db_type == 'clickhouse':
-	import orm.clickhouse as ORM
-elif config.db_type == 'postgres':
-	import orm.postgres as ORM
-else:
-	raise TypeError(f'Database {config.db_type} not supported!')
-
 
 # generate dummy data
 class FakeTransaction():
@@ -95,36 +89,26 @@ class FakeStepRun():
 
 # main filter class
 class Filler:
-	# list of tables to be fulfilled by dummy data
-	tables = [ORM.Step_Info,
-			  ORM.Step_Run,
-			  ORM.Transaction,
-			  ORM.Transaction_Run]
 	fake_transaction_list = []
 	fake_transaction_step_list = []
-
-	def regenTables(self):
-		try:
-			ORM.db.create_tables(self.tables, safe=True)
-		except Exception as e:
-			print(f'Error while creating tables: {e}')
-			exit(1)
 
 	def genNewTrans(self, cnt=10):
 		# drop previous trans list
 		self.fake_transaction_list.clear()
 
 		# Делаем 10 транзакций
-		for i in range(cnt):
-			self.fake_transaction_list.append(FakeTransaction().__dict__)
+		self.fake_transaction_list.extend([FakeTransaction().__dict__ for i in range(cnt)])
 
 		# insert them into db
 		try:
-			start_time = time.time()
-			ORM.Transaction.insert_many(self.fake_transaction_list).execute()
-			print(f'Inserting 10 transactions taken {time.time() - start_time} seconds')
+			url = f'http://{config.api_endpoint}:{config.api_port}/transactions'
+			data = {"transactions": self.fake_transaction_list}
+			response = requests.post(url, json=APICore.json_reserialize(data))
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+
 		except Exception as e:
-			print(f'Error while inserting transactions: {e}')
+			print(f'Error while adding transactions: {e}')
 			exit(1)
 
 	def getExistingTrans(self):
@@ -133,10 +117,14 @@ class Filler:
 
 		# extend it by list of existing transactions
 		try:
-			self.fake_transaction_list.extend([ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)
-											   for transaction in ORM.Transaction.select()])
+			url = f'http://{config.api_endpoint}:{config.api_port}/transactions'
+			response = requests.get(url)
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+			self.fake_transaction_list.extend(response.json()['transactions'])
+
 		except Exception as e:
-			print(f'Error while selecting transactions: {e}')
+			print(f'Error while getting transactions: {e}')
 			exit(1)
 
 	def workOnTrans(self):
@@ -150,15 +138,19 @@ class Filler:
 
 		# Для каждой транзакции делаем от 5 до 10 шагов (рандомно)
 		for fake_transaction in self.fake_transaction_list:
-			for i in range(random.randint(5, 10)):
-				self.fake_transaction_step_list.append(FakeStepInfo(fake_transaction['transactionid'], fake_transaction['createdby']).__dict__)
+			try:
+				steps = [FakeStepInfo(fake_transaction['transactionid'], fake_transaction['createdby']).__dict__
+					 	for i in range(random.randint(5, 10))]
+				self.fake_transaction_step_list.extend(steps)
 
-		# insert them into db
-		try:
-			ORM.Step_Info.insert_many(self.fake_transaction_step_list).execute()
-		except Exception as e:
-			print(f'Error while inserting steps: {e}')
-			exit(1)
+				url = f'http://{config.api_endpoint}:{config.api_port}/transactions/{fake_transaction["transactionid"]}/steps'
+				response = requests.post(url, json={"steps": APICore.json_reserialize(steps)})
+				if response.status_code != 200:
+					raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+
+			except Exception as e:
+				print(f'Error while adding steps: {e}')
+				exit(1)
 
 	def getExistingTransSteps(self):
 		# drop previous trans steps list
@@ -166,10 +158,14 @@ class Filler:
 
 		# extend it by list of existing transactions steps
 		try:
-			self.fake_transaction_step_list.extend([ORM.BaseModel.extract_data_from_select_dict(transaction_step.__dict__)
-													for transaction_step in ORM.Step_Info.select()])
+			url = f'http://{config.api_endpoint}:{config.api_port}/steps'
+			response = requests.get(url)
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+			self.fake_transaction_step_list.extend(response.json()['steps'])
+
 		except Exception as e:
-			print(f'Error while selecting steps: {e}')
+			print(f'Error while getting steps: {e}')
 			exit(1)
 
 	def workOnTransSteps(self):
@@ -179,77 +175,41 @@ class Filler:
 
 	def doRuns(self):
 		# Для каждой транзакции делаем по 10-20 запусков
-		update_counter = 0
-		runs = []
-		step_runs = []
 		for fake_transaction in self.fake_transaction_list:
+			runs = []
 			for i in range(random.randint(10, 20)):
 				fake_transaction_run = FakeTransactionRun(fake_transaction['transactionid']).__dict__
+				fake_transaction_run['step_runs'] = []
 
 				# И для каждого запуска транзакции заполняем его шаги
-				result = "OK"
+				fake_transaction_run["runresult"] = "OK"
 				for fake_transaction_step in self.fake_transaction_step_list:
 					if fake_transaction_step['transactionid'] == fake_transaction['transactionid']:
 						fake_transaction_step_run = FakeStepRun(fake_transaction_run['transactionrunid'],
 																fake_transaction_step['stepid']).__dict__
-						step_runs.append(fake_transaction_step_run)
-
-						# HOOK: update lastruntime and lastrunresult in current transaction
-						try:
-							ORM.Step_Info.update(
-												lastruntime=fake_transaction_step_run['runend'],
-												lastrunresult=fake_transaction_step_run['runresult'])\
-								.where(ORM.Step_Info.stepid == fake_transaction_step['stepid'])\
-								.execute()
-						except Exception as e:
-							print(f'Error while updating step info: {e}')
-							exit(1)
-						update_counter += 1
-
-						if fake_transaction_step_run['runresult'] == "FAIL":
-							result = "FAIL"
-
-				# На основе рузельтатов всех шагов записываем результата транзакции
-				fake_transaction_run['runresult'] = result
-
-				# HOOK: update lastruntime and lastrunresult in current transaction
-				try:
-					ORM.Transaction.update(lastruntime=fake_transaction_run['runend'],
-																 lastrunresult=result)\
-						.where(ORM.Transaction.transactionid == fake_transaction['transactionid'])\
-						.execute()
-				except Exception as e:
-					print(f'Error while updating transaction info: {e}')
-					exit(1)
-				update_counter += 1
+						fake_transaction_run['step_runs'].append(fake_transaction_step_run)
+						if fake_transaction_step_run['runresult'] != "OK": # logical and
+							fake_transaction_run["runresult"] = fake_transaction_step_run['runresult']
 
 				runs.append(fake_transaction_run)
 
-		# insert them into db
-		try:
-			ORM.Transaction_Run.insert_many(runs).execute()
-		except Exception as e:
-			print(f'Error while inserting transaction runs: {e}')
-			exit(1)
+			try:
+				url = f'http://{config.api_endpoint}:{config.api_port}/transactions/{fake_transaction["transactionid"]}/runs'
+				response = requests.post(url, json={"runs": APICore.json_reserialize(runs)})
+				if response.status_code != 200:
+					raise ConnectionError(f'API Error: {response.status_code} {response.text}')
 
-		try:
-			ORM.Step_Run.insert_many(step_runs).execute()
-		except Exception as e:
-			print(f'Error while inserting step runs: {e}')
-			exit(1)
-
-		print("DEBUG: update_counter =", update_counter)
+			except Exception as e:
+				print(f'Error while inserting runs: {e}')
+				exit(1)
 
 
 def main():
 	# gen only new runs for existing transactions and steps by default
-	start_time = time.time()
 	filler = Filler()
-	filler.regenTables()
 	filler.workOnTrans()
 	filler.workOnTransSteps()
 	filler.doRuns()
-	print(f'Generating taken {time.time() - start_time} seconds')
 
 
 if __name__ == '__main__':

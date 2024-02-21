@@ -123,6 +123,7 @@ class Transaction(BaseModel):
     createddatetime = click.DateTime64Field(precision=6)
     createdby = click.NullableField(click.StringField())
     state = click.NullableField(click.StringField())
+    cron = click.StringField(default='not scheduled')
 
     engine = click.MergeTree('createddatetime', ('transactionid',))
 

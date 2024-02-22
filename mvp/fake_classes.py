@@ -1,0 +1,83 @@
+import datetime
+import random
+import uuid
+import wonderwords
+
+from faker import Faker
+fake = Faker()
+
+class FakeTransaction():
+	def __init__(self):
+		self.transactionid = uuid.uuid4()
+		self.name = f"tr-{self.get_random_word()}-{self.get_random_word()}"
+		self.robotid = self.get_robot()
+		self.description = f"An awesome transaction {self.name} executed by robot {self.robotid}"
+		self.createddatetime = fake.date_time_this_year()
+		self.createdby = self.get_creator()
+		self.state = random.choice(['ACTIVE'] * 5 + ['INACTIVE'])
+
+	def get_random_word(self):
+		r = wonderwords.RandomWord()
+		return r.word()
+
+	def get_robot(self):
+		return 'robot-' + random.choice(["astra", "windows", "centos"])
+
+	def get_creator(self):
+		creators = ["Admin" for i in range(2)]
+		creators.append("Operator")
+		return random.choice(creators)
+
+
+class FakeTransactionRun():
+	def __init__(self, transactionid):
+		self.transactionid = transactionid
+		self.transactionrunid = uuid.uuid4()
+		self.runstart = fake.date_time_this_year()
+		self.runend = self.runstart + datetime.timedelta(milliseconds=random.randint(15000, 40000))
+
+	def get_random_word(self):
+		r = wonderwords.RandomWord()
+		return r.word()
+
+	def get_robot(self):
+		return 'robot-' + random.choice(["astra", "windows", "centos"])
+
+	def get_creator(self):
+		creators = ["Admin" for i in range(2)]
+		creators.append("Operator")
+		return random.choice(creators)
+
+
+class FakeStepInfo():
+	def __init__(self, transactionid, creator):
+		self.stepid = uuid.uuid4()
+		self.transactionid = transactionid
+		self.name = f"step-{self.get_random_word()}"
+		self.description = f"An step to do {self.get_random_word()} and {self.get_random_word()}"
+		self.createddatetime = fake.date_time_this_year()
+		self.createdby = creator
+
+	def get_random_word(self):
+		r = wonderwords.RandomWord()
+		return r.word()
+
+
+class FakeStepRun():
+	def __init__(self, transactionrunid, stepid):
+		self.steprunid = uuid.uuid4()
+		self.stepid = stepid
+		self.transactionrunid = transactionrunid
+		self.runstart = fake.date_time_this_year()
+		self.runend = self.runstart + datetime.timedelta(milliseconds=random.randint(2000, 9000))
+		self.runresult = self.get_run_result()
+		self.errorcode = self.get_error_code(self.runresult)
+
+	def get_run_result(self):
+		result = ["OK" for i in range(22)]
+		result.extend(["WARNING", "FAIL"])
+		return random.choice(result)
+
+	def get_error_code(self, runresult):
+		error_codes = {"OK": 0, "WARNING": 1, "FAIL": 2}
+		return error_codes[runresult]

@@ -6,6 +6,7 @@ from api.add import POST
 from api.edit import PUT
 from api.read import GET
 from api.filters import Filters
+from api.files import Files
 
 from orm.config import config
 
@@ -36,6 +37,7 @@ class API(APICore):
         GET()
         POST()
         PUT()
+        Files()
 
     def run(self):
         uvicorn.run(app, host=config.api_endpoint, port=config.api_port)

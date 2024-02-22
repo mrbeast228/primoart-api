@@ -118,6 +118,7 @@ db = BaseModel._database
 class Transaction(BaseModel):
     transactionid = click.UUIDField()
     name = click.StringField()
+    serviceid = click.NullableField(click.UUIDField())
     robotid = click.StringField()
     description = click.StringField()
     createddatetime = click.DateTime64Field(precision=6)
@@ -171,7 +172,7 @@ class Step_Run(BaseModel):
     runend = click.DateTime64Field(precision=6)
     runresult = click.StringField()
     logid = click.UUIDField()
-    screencaptureid = click.UUIDField()
+    screenshotid = click.UUIDField()
     errorcode = click.Int32Field()
 
     engine = click.MergeTree(order_by=('stepid', 'transactionrunid', 'runend'), partition_key=('stepid',))

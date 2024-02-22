@@ -17,6 +17,8 @@ class Config:
     api_endpoint = ''
     api_port = 0
     cors_origins = ''
+    logs_dir = ''
+    screenshots_dir = ''
 
     def __init__(self, config_file):
         # get all user-defined class attributes

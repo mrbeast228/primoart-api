@@ -21,14 +21,13 @@ class POST(APICore):
         async def create_transaction(transaction_data: dict = Body(..., example={"transactions":
                                                                                      [{
                                                                                           "transactionid": "ffffffef-da62-4fed-8d46-c7d6baf80eb3",
+                                                                                          "serviceid": "fd2fffef-da62-4fff-8d46-c7d6baf80eb3",
                                                                                           "name": "tr-morning-faithful",
                                                                                           "robotid": "robot-windows",
                                                                                           "description": "An awesome transaction tr-morning-faithful executed by robot robot-windows",
                                                                                           "createddatetime": "2024-02-10 03:12:00.841588+00:00",
                                                                                           "createdby": "Admin",
-                                                                                          "state": "INACTIVE",
-                                                                                          "lastruntime": "2024-02-13 14:21:24.310942+00:00",
-                                                                                          "lastrunresult": "OK"}]
+                                                                                          "state": "INACTIVE"}]
                                                                                  })):
             try:
                 if 'transactions' not in transaction_data \
@@ -59,9 +58,7 @@ class POST(APICore):
                                                            "name": "step-assistant",
                                                            "description": "An step to do transition and tulip",
                                                            "createddatetime": "2024-02-10 03:12:00.872079+00:00",
-                                                           "createdby": "Admin",
-                                                           "lastruntime": "2024-02-13 14:21:23.583956+00:00",
-                                                           "lastrunresult": "OK"}]
+                                                           "createdby": "Admin"}]
                                                      })):
             try:
                 self.validate_uuid4(transaction_id)
@@ -92,8 +89,8 @@ class POST(APICore):
                                                            "runstart": "2024-02-14 17:29:28.198530",
                                                            "runend": "2024-02-14 17:29:28.542531",
                                                            "runresult": "OK",
-                                                           "logid": "e27383c7-9473-454e-8fff-c985c64cee42",
                                                            "errorcode": 0,
+                                                           "logid": "e27383c7-9473-454e-8bf0-c985c64cee42",
                                                            "step_runs": [{
                                                                "steprunid": "ffffffff-5e33-4d88-9ae8-1aa7aa556066",
                                                                "stepid": "ffffffff-e707-4855-80cb-172ee4f2bfd8",
@@ -102,7 +99,7 @@ class POST(APICore):
                                                                "runend": "2024-02-14 17:29:28.494544",
                                                                "runresult": "OK",
                                                                "logid": "e27383c7-9473-454e-8bf0-c985c64cee42",
-                                                               "screencaptureid": "c903c15a-0ee5-4f6a-b0e4-fd1d0a3d27c6",
+                                                               "screenshotid": "c903c15a-0ee5-4f6a-b0e4-fd1d0a3d27c6",
                                                                "errorcode": 0
                                                            }]
                                                          }]

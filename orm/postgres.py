@@ -31,6 +31,7 @@ class BaseModel(peewee.Model):
 class Transaction(BaseModel):
     transactionid = peewee.UUIDField(primary_key=True, unique=True)
     name = peewee.CharField(max_length=1000)
+    serviceid = peewee.UUIDField(null=True)
     robotid = peewee.CharField(max_length=1000)
     description = peewee.CharField(max_length=1000)
     createddatetime = peewee.DateTimeField()
@@ -75,7 +76,7 @@ class Step_Run(BaseModel):
     runend = peewee.DateTimeField()
     runresult = peewee.CharField(max_length=1000)
     logid = peewee.UUIDField()
-    screencaptureid = peewee.UUIDField()
+    screenshotid = peewee.UUIDField()
     errorcode = peewee.IntegerField()
 
     class Meta:

@@ -10,3 +10,7 @@ clickhouse/logs/*
 
 # Python cache
 **/__pycache__/
+
+# Logs and screenshots
+logs/*
+screenshots/*

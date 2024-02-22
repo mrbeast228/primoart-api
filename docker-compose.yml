@@ -78,9 +78,11 @@ services:
       dockerfile: Dockerfile.uvicorn
     volumes:
       - ./api:/api
+      - ./mvp:/mvp
+      - ./logs:/logs
+      - ./screenshots:/screenshots
       - ./orm:/orm
       - ./config.json:/config.json
-      - ./generator.py:/generator.py
     command: "python3 -m api.api_main"
     ports:
       - "8000:8000"

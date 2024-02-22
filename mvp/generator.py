@@ -1,103 +1,77 @@
-import uuid
+import os
 import requests
-import wonderwords
 import datetime
 import random
+from pathlib import Path
 
+import mvp.fake_classes as mvp
 from api.core import APICore
 from orm.config import config
 
-# generate dummy data
-class FakeTransaction():
-	def __init__(self):
-		self.transactionid = uuid.uuid4()
-		self.name = f"tr-{self.get_random_word()}-{self.get_random_word()}"
-		self.robotid = self.get_robot()
-		self.description = f"An awesome transaction {self.name} executed by robot {self.robotid}"
-		self.createddatetime = datetime.datetime.now()
-		self.createdby = self.get_creator()
-		self.state = random.choice(['ACTIVE'] * 5 + ['INACTIVE'])
-
-	def get_random_word(self):
-		r = wonderwords.RandomWord()
-		return r.word()
-
-	def get_robot(self):
-		return 'robot-' + random.choice(["astra", "windows", "centos"])
-
-	def get_creator(self):
-		creators = ["Admin" for i in range(2)]
-		creators.append("Operator")
-		return random.choice(creators)
-
-
-class FakeTransactionRun():
-	def __init__(self, transactionid):
-		self.transactionid = transactionid
-		self.transactionrunid = uuid.uuid4()
-		self.runstart = datetime.datetime.now()
-		self.runend = datetime.datetime.now() + datetime.timedelta(milliseconds=random.randint(100, 800))
-
-	def get_random_word(self):
-		r = wonderwords.RandomWord()
-		return r.word()
-
-	def get_robot(self):
-		return 'robot-' + random.choice(["astra", "windows", "centos"])
-
-	def get_creator(self):
-		creators = ["Admin" for i in range(2)]
-		creators.append("Operator")
-		return random.choice(creators)
-
-
-class FakeStepInfo():
-	def __init__(self, transactionid, creator):
-		self.stepid = uuid.uuid4()
-		self.transactionid = transactionid
-		self.name = f"step-{self.get_random_word()}"
-		self.description = f"An step to do {self.get_random_word()} and {self.get_random_word()}"
-		self.createddatetime = datetime.datetime.now()
-		self.createdby = creator
-
-	def get_random_word(self):
-		r = wonderwords.RandomWord()
-		return r.word()
-
-
-class FakeStepRun():
-	def __init__(self, transactionrunid, stepid):
-		self.steprunid = uuid.uuid4()
-		self.stepid = stepid
-		self.transactionrunid = transactionrunid
-		self.runstart = datetime.datetime.now()
-		self.runend = datetime.datetime.now() + datetime.timedelta(milliseconds=random.randint(50, 300))
-		self.runresult = self.get_run_result()
-		self.logid = uuid.uuid4()
-		self.screencaptureid = uuid.uuid4()
-		self.errorcode = self.get_error_code(self.runresult)
-
-	def get_run_result(self):
-		result = ["OK" for i in range(22)]
-		result.extend(["WARNING", "FAIL"])
-		return random.choice(result)
-
-	def get_error_code(self, runresult):
-		error_codes = {"OK": 0, "WARNING": 1, "FAIL": 2}
-		return error_codes[runresult]
-
-
-# main filter class
 class Filler:
 	fake_transaction_list = []
 	fake_transaction_step_list = []
+	current_logs = []
+
+	@staticmethod
+	def genScreenshot(status):
+		path = (Path(__file__).parent / 'assets' / 'screenshots' / status).resolve()
+		file = open(path / random.choice(os.listdir(path)), 'rb')
+
+		try:
+			url = f'http://{config.api_endpoint}:{config.api_port}/screenshots'
+			files = {'file': file}
+			response = requests.post(url, files=files)
+			file.close()
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+			return response.json()['screenshot_id']
+
+		except Exception as e:
+			print(f'Error while adding screenshot: {e}')
+			exit(1)
+
+	def genLog(self):
+		log = '\n'.join(
+			[f'[{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}]'
+			 f'{mvp.fake.sentence(nb_words=10, variable_nb_words=True)}'
+			for i in range(random.randint(20, 50))]
+		)
+		bytes = log.encode('utf-8')
+		self.current_logs.append(log)
+
+		try:
+			url = f'http://{config.api_endpoint}:{config.api_port}/logs'
+			response = requests.post(url, files={'file': bytes})
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+			return response.json()['log_id']
+
+		except Exception as e:
+			print(f'Error while adding log: {e}')
+			exit(1)
+
+	def concatLogs(self):
+		result_log = '\n\n'.join(self.current_logs)
+		try:
+			url = f'http://{config.api_endpoint}:{config.api_port}/logs'
+			response = requests.post(url, files={'file': result_log.encode('utf-8')})
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+
+			self.current_logs.clear()
+			return response.json()['log_id']
+
+		except Exception as e:
+			print(f'Error while adding log: {e}')
+			exit(1)
 
 	def genNewTrans(self, cnt=10):
 		# drop previous trans list
 		self.fake_transaction_list.clear()
 
 		# Делаем 10 транзакций
-		self.fake_transaction_list.extend([FakeTransaction().__dict__ for i in range(cnt)])
+		self.fake_transaction_list.extend([mvp.FakeTransaction().__dict__ for i in range(cnt)])
 
 		# insert them into db
 		try:
@@ -139,8 +113,8 @@ class Filler:
 		# Для каждой транзакции делаем от 5 до 10 шагов (рандомно)
 		for fake_transaction in self.fake_transaction_list:
 			try:
-				steps = [FakeStepInfo(fake_transaction['transactionid'], fake_transaction['createdby']).__dict__
-					 	for i in range(random.randint(5, 10))]
+				steps = [mvp.FakeStepInfo(fake_transaction['transactionid'], fake_transaction['createdby']).__dict__
+						 for i in range(random.randint(5, 10))]
 				self.fake_transaction_step_list.extend(steps)
 
 				url = f'http://{config.api_endpoint}:{config.api_port}/transactions/{fake_transaction["transactionid"]}/steps'
@@ -178,19 +152,26 @@ class Filler:
 		for fake_transaction in self.fake_transaction_list:
 			runs = []
 			for i in range(random.randint(10, 20)):
-				fake_transaction_run = FakeTransactionRun(fake_transaction['transactionid']).__dict__
+				fake_transaction_run = mvp.FakeTransactionRun(fake_transaction['transactionid']).__dict__
 				fake_transaction_run['step_runs'] = []
 
 				# И для каждого запуска транзакции заполняем его шаги
 				fake_transaction_run["runresult"] = "OK"
 				for fake_transaction_step in self.fake_transaction_step_list:
 					if fake_transaction_step['transactionid'] == fake_transaction['transactionid']:
-						fake_transaction_step_run = FakeStepRun(fake_transaction_run['transactionrunid'],
+						fake_transaction_step_run = mvp.FakeStepRun(fake_transaction_run['transactionrunid'],
 																fake_transaction_step['stepid']).__dict__
+
+						# logs and screenshots
+						fake_transaction_step_run['logid'] = self.genLog()
+						fake_transaction_step_run['screenshotid'] = self.genScreenshot(fake_transaction_step_run['runresult'])
+
 						fake_transaction_run['step_runs'].append(fake_transaction_step_run)
 						if fake_transaction_step_run['runresult'] != "OK": # logical and
 							fake_transaction_run["runresult"] = fake_transaction_step_run['runresult']
 
+				# work on logs todo
+				fake_transaction_run['logid'] = self.concatLogs()
 				runs.append(fake_transaction_run)
 
 			try:

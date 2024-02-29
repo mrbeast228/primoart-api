@@ -1,4 +1,5 @@
 import os
+import uuid
 import requests
 import datetime
 import random
@@ -151,7 +152,7 @@ class Filler:
 		# Для каждой транзакции делаем по 10-20 запусков
 		for fake_transaction in self.fake_transaction_list:
 			runs = []
-			for i in range(random.randint(10, 20)):
+			for i in range(random.randint(config.mvp_min_runs, config.mvp_min_runs * 2)):
 				fake_transaction_run = mvp.FakeTransactionRun(fake_transaction['transactionid']).__dict__
 				fake_transaction_run['step_runs'] = []
 
@@ -163,15 +164,15 @@ class Filler:
 																fake_transaction_step['stepid']).__dict__
 
 						# logs and screenshots
-						fake_transaction_step_run['logid'] = self.genLog()
-						fake_transaction_step_run['screenshotid'] = self.genScreenshot(fake_transaction_step_run['runresult'])
+						fake_transaction_step_run['logid'] = self.genLog() if config.mvp_create_artifacts else str(uuid.uuid4())
+						fake_transaction_step_run['screenshotid'] = self.genScreenshot(fake_transaction_step_run['runresult']) if config.mvp_create_artifacts else str(uuid.uuid4())
 
 						fake_transaction_run['step_runs'].append(fake_transaction_step_run)
 						if fake_transaction_step_run['runresult'] != "OK": # logical and
 							fake_transaction_run["runresult"] = fake_transaction_step_run['runresult']
 
 				# work on logs todo
-				fake_transaction_run['logid'] = self.concatLogs()
+				fake_transaction_run['logid'] = self.concatLogs() if config.mvp_create_artifacts else str(uuid.uuid4())
 				runs.append(fake_transaction_run)
 
 			try:

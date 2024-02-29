@@ -19,6 +19,8 @@ class Config:
     cors_origins = ''
     logs_dir = ''
     screenshots_dir = ''
+    mvp_min_runs = 0
+    mvp_create_artifacts = False
 
     def __init__(self, config_file):
         # get all user-defined class attributes

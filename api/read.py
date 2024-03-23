@@ -13,10 +13,102 @@ from api.core import APICore, app
 class GET(APICore):
     def __init__(self):
         super().__init__()
-        @app.get("/transactions")
-        async def get_transactions():
+
+
+        @app.get("/robots")
+        async def get_robots():
             try:
-                transactions = ORM.Transaction.select()
+                robots = ORM.Robots.select()
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(robot.__dict__)
+                             for robot in robots]
+                return JSONResponse(content={'robots': self.json_reserialize(subresult)})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting robots: {e}'}, status_code=500)
+
+
+        @app.get("/services")
+        async def get_services():
+            try:
+                services = ORM.Services.select()
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(service.__dict__)
+                             for service in services]
+                return JSONResponse(content={'services': self.json_reserialize(subresult)})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting services: {e}'}, status_code=500)
+
+
+        @app.get("/services/{service_id}")
+        async def get_service_by_id(service_id: str):
+            try:
+                self.validate_uuid4(service_id)
+
+                services = ORM.Services.select().where(ORM.Services.serviceid == service_id)
+                if not services:
+                    return JSONResponse(content={'error': 'Service not found!'}, status_code=404)
+
+                result_service = ORM.BaseModel.extract_data_from_select_dict(services[0].__dict__)
+                return JSONResponse(content={'services': [self.json_reserialize(result_service)]})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting service: {e}'}, status_code=500)
+
+
+        @app.get("/services/{service_id}/business_processes")
+        @app.get("/business_processes")
+        async def get_service_business_processes(service_id: str = ''):
+            try:
+                if service_id:
+                    self.validate_uuid4(service_id)
+                    business_processes = ORM.Business_Process.select().where(
+                        ORM.Business_Process.serviceid == service_id)
+                else:
+                    business_processes = ORM.Business_Process.select()
+                if service_id and not business_processes:
+                    return JSONResponse(content={'error': 'Business processes not found!'}, status_code=404)
+
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
+                             for process in business_processes]
+                return JSONResponse(content={'business_processes': self.json_reserialize(subresult)})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting business processes: {e}'}, status_code=500)
+
+
+        @app.get("/services/{service_id}/business_processes/{process_id}")
+        @app.get("/business_processes/{process_id}")
+        async def get_business_process_by_id(process_id: str, service_id: str = ''):
+            try:
+                if service_id:
+                    self.validate_uuid4(service_id)
+                self.validate_uuid4(process_id)
+
+                process = ORM.Business_Process.select().where(ORM.Business_Process.processid == process_id)[0]
+                if not process:
+                    return JSONResponse(content={'error': 'Business process not found!'}, status_code=404)
+
+                result_process = ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
+                return JSONResponse(content={'business_processes': [self.json_reserialize(result_process)]})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting business process: {e}'}, status_code=500)
+
+
+        @app.get("/services/{service_id}/business_processes/{process_id}/transactions")
+        @app.get("/business_processes/{process_id}/transactions")
+        @app.get("/transactions")
+        async def get_transactions(process_id: str = ''):
+            try:
+                if process_id:
+                    self.validate_uuid4(process_id)
+                    transactions = ORM.Transaction.select().where(ORM.Transaction.processid == process_id)
+                else:
+                    transactions = ORM.Transaction.select()
+
+                if process_id and not transactions:
+                    return JSONResponse(content={'error': 'Transactions not found!'}, status_code=404)
+
                 subresult = [ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)
                              for transaction in transactions]
                 return JSONResponse(content={'transactions': self.json_reserialize(subresult)})

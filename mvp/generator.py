@@ -10,6 +10,9 @@ from api.core import APICore
 from orm.config import config
 
 class Filler:
+	fake_robot_list = []
+	fake_service_list = []
+	fake_business_process_list = []
 	fake_transaction_list = []
 	fake_transaction_step_list = []
 	current_logs = []
@@ -67,27 +70,129 @@ class Filler:
 			print(f'Error while adding log: {e}')
 			exit(1)
 
-	def genNewTrans(self, cnt=10):
-		# drop previous trans list
-		self.fake_transaction_list.clear()
-
-		# Делаем 10 транзакций
-		self.fake_transaction_list.extend([mvp.FakeTransaction().__dict__ for i in range(cnt)])
-
-		# insert them into db
+	def genNewRobots(self, cnt=4):
+		self.fake_robot_list.extend([mvp.FakeRobot().__dict__ for i in range(cnt)])
 		try:
-			url = f'http://{config.api_endpoint}:{config.api_port}/transactions'
-			data = {"transactions": self.fake_transaction_list}
-			response = requests.post(url, json=APICore.json_reserialize(data))
+			url = f'http://{config.api_endpoint}:{config.api_port}/robots'
+			response = requests.post(url, json={"robots": APICore.json_reserialize(self.fake_robot_list)})
 			if response.status_code != 200:
 				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
 
 		except Exception as e:
-			print(f'Error while adding transactions: {e}')
+			print(f'Error while inserting robots: {e}')
 			exit(1)
 
+	def getExistingRobots(self):
+		self.fake_robot_list.clear()
+		try:
+			url = f'http://{config.api_endpoint}:{config.api_port}/robots'
+			response = requests.get(url)
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+			self.fake_robot_list.extend(response.json()['robots'])
+
+		except Exception as e:
+			print(f'Error while getting robots: {e}')
+			exit(1)
+
+	def workOnRobots(self):
+		self.getExistingRobots()
+		if not self.fake_robot_list:
+			self.genNewRobots()
+
+	def genNewServices(self, cnt=10):
+		self.fake_service_list.extend([mvp.FakeService().__dict__ for i in range(random.randint(cnt // 2, cnt))])
+		try:
+			url = f'http://{config.api_endpoint}:{config.api_port}/services'
+			response = requests.post(url, json={"services": APICore.json_reserialize(self.fake_service_list)})
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+
+		except Exception as e:
+			print(f'Error while inserting services: {e}')
+			exit(1)
+
+	def getExistingServices(self):
+		self.fake_service_list.clear()
+		try:
+			url = f'http://{config.api_endpoint}:{config.api_port}/services'
+			response = requests.get(url)
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+			self.fake_service_list.extend(response.json()['services'])
+
+		except Exception as e:
+			print(f'Error while getting services: {e}')
+			exit(1)
+
+	def workOnServices(self):
+		self.getExistingServices()
+		if not self.fake_service_list:
+			self.genNewServices()
+
+	def genNewBusinessProcesses(self, cnt=5):
+		# drop previous business processes list
+		self.fake_business_process_list.clear()
+
+		# Для каждой услуги делаем от 1 до 3 бизнес-процессов (рандомно)
+		for fake_service in self.fake_service_list:
+			try:
+				busines_processes = [mvp.FakeBusinessProcess(fake_service['serviceid']).__dict__
+									 for i in range(random.randint(cnt // 2, cnt))]
+				self.fake_business_process_list.extend(busines_processes)
+
+				url = f'http://{config.api_endpoint}:{config.api_port}/services/{fake_service["serviceid"]}/business_processes'
+				response = requests.post(url, json={"business_processes": APICore.json_reserialize(busines_processes)})
+				if response.status_code != 200:
+					raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+
+			except Exception as e:
+				print(f'Error while inserting business processes: {e}')
+				exit(1)
+
+	def getExistingBusinessProcesses(self):
+		# drop previous business processes list
+		self.fake_business_process_list.clear()
+
+		# extend it by list of existing business processes
+		try:
+			url = f'http://{config.api_endpoint}:{config.api_port}/business_processes'
+			response = requests.get(url)
+			if response.status_code != 200:
+				raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+			self.fake_business_process_list.extend(response.json()['business_processes'])
+
+		except Exception as e:
+			print(f'Error while getting business processes: {e}')
+			exit(1)
+
+	def workOnBusinessProcesses(self):
+		self.getExistingBusinessProcesses()
+		if not self.fake_business_process_list:
+			self.genNewBusinessProcesses()
+
+	def genNewTrans(self, cnt=10):
+		# drop previous transactions list
+		self.fake_transaction_list.clear()
+
+		# Для каждого бизнес-процесса делаем от 1 до 10 транзакций (рандомно)
+		for fake_business_process in self.fake_business_process_list:
+			try:
+				transactions = [mvp.FakeTransaction(fake_business_process['processid']).__dict__
+								for i in range(random.randint(cnt // 2, cnt))]
+				self.fake_transaction_list.extend(transactions)
+
+				url = f'http://{config.api_endpoint}:{config.api_port}/business_processes/{fake_business_process["processid"]}/transactions'
+				response = requests.post(url, json={"transactions": APICore.json_reserialize(transactions)})
+				if response.status_code != 200:
+					raise ConnectionError(f'API Error: {response.status_code} {response.text}')
+
+			except Exception as e:
+				print(f'Error while inserting transactions: {e}')
+				exit(1)
+
 	def getExistingTrans(self):
-		# drop previous trans list
+		# drop previous transactions list
 		self.fake_transaction_list.clear()
 
 		# extend it by list of existing transactions
@@ -107,7 +212,7 @@ class Filler:
 		if not self.fake_transaction_list:
 			self.genNewTrans()
 
-	def genNewTransSteps(self):
+	def genNewTransSteps(self, cnt=10):
 		# drop previous trans steps list
 		self.fake_transaction_step_list.clear()
 
@@ -115,7 +220,7 @@ class Filler:
 		for fake_transaction in self.fake_transaction_list:
 			try:
 				steps = [mvp.FakeStepInfo(fake_transaction['transactionid'], fake_transaction['createdby']).__dict__
-						 for i in range(random.randint(5, 10))]
+						 for i in range(random.randint(cnt // 2, cnt))]
 				self.fake_transaction_step_list.extend(steps)
 
 				url = f'http://{config.api_endpoint}:{config.api_port}/transactions/{fake_transaction["transactionid"]}/steps'
@@ -153,7 +258,8 @@ class Filler:
 		for fake_transaction in self.fake_transaction_list:
 			runs = []
 			for i in range(random.randint(config.mvp_min_runs, config.mvp_min_runs * 2)):
-				fake_transaction_run = mvp.FakeTransactionRun(fake_transaction['transactionid']).__dict__
+				robot = random.choice(self.fake_robot_list)
+				fake_transaction_run = mvp.FakeTransactionRun(fake_transaction['transactionid'], robot['robotid']).__dict__
 				fake_transaction_run['step_runs'] = []
 
 				# И для каждого запуска транзакции заполняем его шаги
@@ -189,10 +295,12 @@ class Filler:
 def main():
 	# gen only new runs for existing transactions and steps by default
 	filler = Filler()
+	filler.workOnRobots()
+	filler.workOnServices()
+	filler.workOnBusinessProcesses()
 	filler.workOnTrans()
 	filler.workOnTransSteps()
 	filler.doRuns()
-
 
 if __name__ == '__main__':
 	main()

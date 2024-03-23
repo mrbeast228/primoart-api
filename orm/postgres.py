@@ -28,11 +28,48 @@ class BaseModel(peewee.Model):
         primary_key = False
 
 
+class Robots(BaseModel):
+    robotid = peewee.UUIDField(primary_key=True, unique=True)
+    name = peewee.CharField(max_length=1000)
+    city = peewee.CharField(max_length=1000)
+    lattitude = peewee.FloatField()
+    longitude = peewee.FloatField()
+    ipaddr = peewee.CharField(max_length=1000)
+    createddatetime = peewee.DateTimeField()
+    createdby = peewee.CharField(max_length=1000)
+
+    class Meta:
+        table_name = 'robots'
+
+
+class Services(BaseModel):
+    serviceid = peewee.UUIDField(primary_key=True, unique=True)
+    name = peewee.CharField(max_length=1000)
+    description = peewee.CharField(max_length=1000)
+    createddatetime = peewee.DateTimeField()
+    createdby = peewee.CharField(max_length=1000)
+
+    class Meta:
+        table_name = 'services'
+
+
+class Business_Process(BaseModel):
+    processid = peewee.UUIDField(primary_key=True, unique=True)
+    serviceid = peewee.UUIDField()
+    name = peewee.CharField(max_length=1000)
+    description = peewee.CharField(max_length=1000)
+    createddatetime = peewee.DateTimeField()
+    createdby = peewee.CharField(max_length=1000)
+    state = peewee.CharField(max_length=1000)
+
+    class Meta:
+        table_name = 'business_processes'
+
+
 class Transaction(BaseModel):
     transactionid = peewee.UUIDField(primary_key=True, unique=True)
     name = peewee.CharField(max_length=1000)
-    serviceid = peewee.UUIDField(null=True)
-    robotid = peewee.CharField(max_length=1000)
+    processid = peewee.UUIDField(null=True)
     description = peewee.CharField(max_length=1000)
     createddatetime = peewee.DateTimeField()
     createdby = peewee.CharField(max_length=1000, null=True)
@@ -46,6 +83,7 @@ class Transaction(BaseModel):
 class Transaction_Run(BaseModel):
     transactionid = peewee.UUIDField()
     transactionrunid = peewee.UUIDField(primary_key=True, unique=True)
+    robotid = peewee.CharField(max_length=1000)
     runstart = peewee.DateTimeField()
     runend = peewee.DateTimeField(null=True)
     runresult = peewee.CharField(max_length=1000, null=True)
@@ -83,4 +121,4 @@ class Step_Run(BaseModel):
         table_name = 'step_runs'
 
 # auto create schemas and tables
-db.create_tables([Transaction, Transaction_Run, Step_Info, Step_Run])
+db.create_tables([Transaction, Transaction_Run, Step_Info, Step_Run, Robots, Services, Business_Process])

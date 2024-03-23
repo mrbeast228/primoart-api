@@ -11,6 +11,6 @@
   "cors_origins": "*",
   "logs_dir": "logs",
   "screenshots_dir": "screenshots",
-  "mvp_min_runs": 5000,
+  "mvp_min_runs": 100,
   "mvp_create_artifacts": false
 }

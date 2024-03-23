@@ -27,6 +27,7 @@ class BaseModel(click.Model):
 
     _database.create_tables = create_tables.__get__(_database)
     click.CharField = click.StringField
+    click.FloatField = click.Float64Field
     click.QuerySet.where = click.QuerySet.filter
 
     # query subclass to make possible do raw queries
@@ -115,11 +116,57 @@ class BaseModel(click.Model):
 db = BaseModel._database
 
 
+class Robots(BaseModel):
+    robotid = click.UUIDField()
+    name = click.StringField()
+    city = click.StringField()
+    lattitude = click.Float64Field()
+    longitude = click.Float64Field()
+    ipaddr = click.StringField()
+    createddatetime = click.DateTime64Field(precision=6)
+    createdby = click.StringField()
+
+    engine = click.MergeTree('createddatetime', ('robotid',))
+
+    @classmethod
+    def table_name(cls):
+        return 'robots'
+
+
+class Services(BaseModel):
+    serviceid = click.UUIDField()
+    name = click.StringField()
+    description = click.StringField()
+    createddatetime = click.DateTime64Field(precision=6)
+    createdby = click.StringField()
+
+    engine = click.MergeTree('createddatetime', ('serviceid',))
+
+    @classmethod
+    def table_name(cls):
+        return 'services'
+
+
+class Business_Process(BaseModel):
+    processid = click.UUIDField()
+    serviceid = click.UUIDField()
+    name = click.StringField()
+    description = click.StringField()
+    createddatetime = click.DateTime64Field(precision=6)
+    createdby = click.StringField()
+    state = click.NullableField(click.StringField())
+
+    engine = click.MergeTree('createddatetime', ('processid',))
+
+    @classmethod
+    def table_name(cls):
+        return 'business_processes'
+
+
 class Transaction(BaseModel):
     transactionid = click.UUIDField()
     name = click.StringField()
-    serviceid = click.NullableField(click.UUIDField())
-    robotid = click.StringField()
+    processid = click.NullableField(click.UUIDField())
     description = click.StringField()
     createddatetime = click.DateTime64Field(precision=6)
     createdby = click.NullableField(click.StringField())
@@ -136,6 +183,7 @@ class Transaction(BaseModel):
 class Transaction_Run(BaseModel):
     transactionid = click.UUIDField()
     transactionrunid = click.UUIDField()
+    robotid = click.StringField()
     runstart = click.DateTime64Field(precision=6)
     runend = click.DateTime64Field(precision=6)
     runresult = click.StringField()
@@ -182,4 +230,4 @@ class Step_Run(BaseModel):
         return 'step_runs'
 
 # auto create tables
-BaseModel.create_tables([Transaction, Transaction_Run, Step_Info, Step_Run])
+BaseModel.create_tables([Transaction, Transaction_Run, Step_Info, Step_Run, Services, Business_Process, Robots])

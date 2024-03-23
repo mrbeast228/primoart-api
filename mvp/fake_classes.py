@@ -6,12 +6,52 @@ import wonderwords
 from faker import Faker
 fake = Faker()
 
-class FakeTransaction():
+
+class FakeRobot():
 	def __init__(self):
-		self.transactionid = uuid.uuid4()
-		self.name = f"tr-{self.get_random_word()}-{self.get_random_word()}"
-		self.robotid = self.get_robot()
-		self.description = f"An awesome transaction {self.name} executed by robot {self.robotid}"
+		self.robotid = uuid.uuid4()
+		self.name = f"robot-{self.get_random_word()}"
+		self.city = f"city-{self.get_random_word()}"
+		self.lattitude = random.uniform(-90, 90)
+		self.longitude = random.uniform(-180, 180)
+		self.ipaddr = fake.ipv4()
+		self.createddatetime = fake.date_time_this_year()
+		self.createdby = self.get_creator()
+
+	def get_random_word(self):
+		r = wonderwords.RandomWord()
+		return r.word()
+
+	def get_creator(self):
+		creators = ["Admin" for i in range(2)]
+		creators.append("Operator")
+		return random.choice(creators)
+
+
+class FakeService():
+	def __init__(self):
+		self.serviceid = uuid.uuid4()
+		self.name = f"service-{self.get_random_word()}"
+		self.description = f"An awesome service {self.name}"
+		self.createddatetime = fake.date_time_this_year()
+		self.createdby = self.get_creator()
+
+	def get_random_word(self):
+		r = wonderwords.RandomWord()
+		return r.word()
+
+	def get_creator(self):
+		creators = ["Admin" for i in range(2)]
+		creators.append("Operator")
+		return random.choice(creators)
+
+
+class FakeBusinessProcess():
+	def __init__(self, serviceid):
+		self.processid = uuid.uuid4()
+		self.serviceid = serviceid
+		self.name = f"process-{self.get_random_word()}"
+		self.description = f"An awesome process {self.name}"
 		self.createddatetime = fake.date_time_this_year()
 		self.createdby = self.get_creator()
 		self.state = random.choice(['ACTIVE'] * 5 + ['INACTIVE'])
@@ -20,8 +60,25 @@ class FakeTransaction():
 		r = wonderwords.RandomWord()
 		return r.word()
 
-	def get_robot(self):
-		return 'robot-' + random.choice(["astra", "windows", "centos"])
+	def get_creator(self):
+		creators = ["Admin" for i in range(2)]
+		creators.append("Operator")
+		return random.choice(creators)
+
+
+class FakeTransaction():
+	def __init__(self, processid):
+		self.transactionid = uuid.uuid4()
+		self.name = f"tr-{self.get_random_word()}-{self.get_random_word()}"
+		self.processid = processid
+		self.description = f"An awesome transaction {self.name}"
+		self.createddatetime = fake.date_time_this_year()
+		self.createdby = self.get_creator()
+		self.state = random.choice(['ACTIVE'] * 5 + ['INACTIVE'])
+
+	def get_random_word(self):
+		r = wonderwords.RandomWord()
+		return r.word()
 
 	def get_creator(self):
 		creators = ["Admin" for i in range(2)]
@@ -30,18 +87,16 @@ class FakeTransaction():
 
 
 class FakeTransactionRun():
-	def __init__(self, transactionid):
+	def __init__(self, transactionid, robotid):
 		self.transactionid = transactionid
 		self.transactionrunid = uuid.uuid4()
+		self.robotid = robotid
 		self.runstart = fake.date_time_this_year()
 		self.runend = self.runstart + datetime.timedelta(milliseconds=random.randint(15000, 40000))
 
 	def get_random_word(self):
 		r = wonderwords.RandomWord()
 		return r.word()
-
-	def get_robot(self):
-		return 'robot-' + random.choice(["astra", "windows", "centos"])
 
 	def get_creator(self):
 		creators = ["Admin" for i in range(2)]

@@ -16,10 +16,11 @@ from api.core import APICore, app
 class Filters(APICore):
     def __init__(self):
         super().__init__()
-        @app.get("/transactions/filter")
-        async def get_filtered_transactions(key: str = Query(..., example="name"),
-                                            value: str = Query(..., example="tr-robot-ubuntu"),
-                                            type: str | None = Query(default=None, example="eq")):
+
+        @app.get("/robots/filter")
+        async def get_filtered_robots(key: str = Query(..., example="name"),
+                                      value: str = Query(..., example="robot-1"),
+                                      type: str | None = Query(default=None, example="eq")):
             try:
                 if not value:
                     return JSONResponse(content={'error': 'Filtering value is required!'}, status_code=400)
@@ -27,14 +28,109 @@ class Filters(APICore):
                     type = 'eq'
 
                 # get filtering based on type (compatible with bash-like comparison operators)
-                transactions = ORM.Transaction.select() \
-                    .where(self.bash_comparsion(type, getattr(ORM.Transaction, key), value))
+                robots = ORM.Robots.select() \
+                    .where(self.bash_comparsion(type, getattr(ORM.Robots, key), value))
+
+                if not robots:
+                    return JSONResponse(content={'error': 'No robots found!'}, status_code=404)
+
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(robot.__dict__)
+                             for robot in robots]
+                return JSONResponse(content={'robots': self.json_reserialize(subresult)})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while filtering robots: {e}'}, status_code=500)
+
+
+        @app.get("/services/filter")
+        async def get_filtered_services(key: str = Query(..., example="name"),
+                                        value: str = Query(..., example="service-1"),
+                                        type: str | None = Query(default=None, example="eq")):
+            try:
+                if not value:
+                    return JSONResponse(content={'error': 'Filtering value is required!'}, status_code=400)
+                if not type:
+                    type = 'eq'
+
+                # get filtering based on type (compatible with bash-like comparison operators)
+                services = ORM.Services.select() \
+                    .where(self.bash_comparsion(type, getattr(ORM.Services, key), value))
+
+                if not services:
+                    return JSONResponse(content={'error': 'No services found!'}, status_code=404)
+
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(service.__dict__)
+                             for service in services]
+                return JSONResponse(content={'services': self.json_reserialize(subresult)})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while filtering services: {e}'}, status_code=500)
+
+
+        @app.get("/services/{service_id}/processes/filter")
+        @app.get("/processes/filter")
+        async def get_filtered_processes(key: str = Query(..., example="name"),
+                                            value: str = Query(..., example="process-1"),
+                                            type: str | None = Query(default=None, example="eq"),
+                                            service_id: str = ''):
+                try:
+                    if service_id:
+                        self.validate_uuid4(service_id)
+                    if not value:
+                        return JSONResponse(content={'error': 'Filtering value is required!'}, status_code=400)
+                    if not type:
+                        type = 'eq'
+
+                    # get filtering based on type (compatible with bash-like comparison operators)
+                    # WARNING: here make possible to filter without serviceid if it's empty
+                    if service_id:
+                        processes = ORM.Business_Process.select() \
+                            .where(self.bash_comparsion(type, getattr(ORM.Business_Process, key), value),
+                                ORM.Business_Process.serviceid == service_id)
+                    else:
+                        processes = ORM.Business_Process.select() \
+                            .where(self.bash_comparsion(type, getattr(ORM.Business_Process, key), value))
+
+                    if not processes:
+                        return JSONResponse(content={'error': 'No processes found!'}, status_code=404)
+
+                    subresult = [ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
+                                for process in processes]
+                    return JSONResponse(content={'processes': self.json_reserialize(subresult)})
+
+                except Exception as e:
+                    return JSONResponse(content={'error': f'Error while filtering processes: {e}'}, status_code=500)
+
+
+        @app.get("/business_processes/{process_id}/transactions/filter")
+        @app.get("/transactions/filter")
+        async def get_filtered_transactions(key: str = Query(..., example="name"),
+                                            value: str = Query(..., example="tr-robot-ubuntu"),
+                                            type: str | None = Query(default=None, example="eq"),
+                                            process_id: str = ''):
+            try:
+                if process_id:
+                    self.validate_uuid4(process_id)
+                if not value:
+                    return JSONResponse(content={'error': 'Filtering value is required!'}, status_code=400)
+                if not type:
+                    type = 'eq'
+
+                # get filtering based on type (compatible with bash-like comparison operators)
+                # WARNING: here make possible to filter without processid if it's empty
+                if process_id:
+                    transactions = ORM.Transaction.select() \
+                        .where(self.bash_comparsion(type, getattr(ORM.Transaction, key), value),
+                            ORM.Transaction.processid == process_id)
+                else:
+                    transactions = ORM.Transaction.select() \
+                        .where(self.bash_comparsion(type, getattr(ORM.Transaction, key), value))
 
                 if not transactions:
                     return JSONResponse(content={'error': 'No transactions found!'}, status_code=404)
 
                 subresult = [ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)
-                             for transaction in transactions]
+                            for transaction in transactions]
                 return JSONResponse(content={'transactions': self.json_reserialize(subresult)})
 
             except Exception as e:

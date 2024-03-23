@@ -17,11 +17,98 @@ class POST(APICore):
     def __init__(self):
         super().__init__()
 
-        @app.post("/transactions")
+        @app.post("/robots")
+        async def create_robot(robot_data: dict = Body(..., example={"robots":
+                                                                        [{"robotid": "ffffffff-5e33-4d88-9ae8-1aa7aa556066",
+                                                                             "name": "robot-windows",
+                                                                             "city": "New York",
+                                                                             "lattitude": 40.7128,
+                                                                             "longitude": -74.0060,
+                                                                             "createddatetime": "2024-02-10 03:12:00.841588+00:00",
+                                                                             "createdby": "Admin"}]
+                                                                     })):
+                try:
+                 if 'robots' not in robot_data or not isinstance(robot_data['robots'], list):
+                      return JSONResponse(content={'error': 'Invalid robots format!'}, status_code=400)
+                 real_robots = robot_data['robots']
+
+                 # we need to check if robots with such IDs already exist
+                 for robot in real_robots:
+                      if ORM.Robots.select().where(ORM.Robots.robotid == robot['robotid']):
+                            return JSONResponse(content={'error': f"Robot with ID {robot['robotid']} already exists!"},
+                                              status_code=409)
+
+                 ORM.Robots.insert_many(real_robots).execute()
+                 return JSONResponse(content={'message': f"Robot(s) created successfully!"})
+
+                except Exception as e:
+                 return JSONResponse(content={'error': f'Error while creating robot: {e}'}, status_code=500)
+
+
+        @app.post("/services")
+        async def create_service(service_data: dict = Body(..., example={"services":
+                                                                            [{"serviceid": "ffffffff-5e33-4d88-9ae8-1aa7aa556066",
+                                                                                "name": "service-1",
+                                                                                "description": "Service for testing",
+                                                                                "createddatetime": "2024-02-10 03:12:00.841588+00:00",
+                                                                                "createdby": "Admin"}]
+                                                                        })):
+                try:
+                    if 'services' not in service_data or not isinstance(service_data['services'], list):
+                        return JSONResponse(content={'error': 'Invalid services format!'}, status_code=400)
+                    real_services = service_data['services']
+
+                    # we need to check if services with such IDs already exist
+                    for service in real_services:
+                        if ORM.Services.select().where(ORM.Services.serviceid == service['serviceid']):
+                            return JSONResponse(content={'error': f"Service with ID {service['serviceid']} already exists!"},
+                                                status_code=409)
+
+                    ORM.Services.insert_many(real_services).execute()
+                    return JSONResponse(content={'message': f"Service(s) created successfully!"})
+
+                except Exception as e:
+                    return JSONResponse(content={'error': f'Error while creating service: {e}'}, status_code=500)
+
+
+        @app.post("/services/{service_id}/business_processes")
+        async def create_business_process(service_id: str = Path(..., example="ffffffff-5e33-4d88-9ae8-1aa7aa556066"),
+                                          process_data: dict = Body(..., example={"business_processes":
+                                                                                       [{"processid": "fd2fffef-da62-4fff-8d46-c7d6baf80eb3",
+                                                                                         "serviceid": "ffffffff-5e33-4d88-9ae8-1aa7aa556066",
+                                                                                         "name": "bp-1",
+                                                                                         "description": "Business process for testing",
+                                                                                         "createddatetime": "2024-02-10 03:12:00.841588+00:00",
+                                                                                         "createdby": "Admin"}]
+                                                                                   })):
+            try:
+                self.validate_uuid4(service_id)
+
+                if 'business_processes' not in process_data \
+                        or not isinstance(process_data['business_processes'], list):
+                    return JSONResponse(content={'error': 'Invalid business processes format!'}, status_code=400)
+                real_processes = process_data['business_processes']
+
+                # we need to check if business processes with such IDs already exist
+                for process in real_processes:
+                    if ORM.Business_Process.select().where(ORM.Business_Process.processid == process['processid']):
+                        return JSONResponse(
+                            content={'error': f"Business process with ID {process['processid']} already exists!"},
+                            status_code=409)
+
+                ORM.Business_Process.insert_many(real_processes).execute()
+                return JSONResponse(content={'message': f"Business process(es) created successfully!"})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while creating business process: {e}'}, status_code=500)
+
+
+        @app.post("/services/{service_id}/business_processes/{process_id}/transactions")
+        @app.post("/business_processes/{process_id}/transactions")
         async def create_transaction(transaction_data: dict = Body(..., example={"transactions":
                                                                                      [{
                                                                                           "transactionid": "ffffffef-da62-4fed-8d46-c7d6baf80eb3",
-                                                                                          "serviceid": "fd2fffef-da62-4fff-8d46-c7d6baf80eb3",
+                                                                                          "processid": "fd2fffef-da62-4fff-8d46-c7d6baf80eb3",
                                                                                           "name": "tr-morning-faithful",
                                                                                           "robotid": "robot-windows",
                                                                                           "description": "An awesome transaction tr-morning-faithful executed by robot robot-windows",

@@ -173,21 +173,28 @@ class Filters(APICore):
 
 
         @app.get("/transactions/{transaction_id}/runs/filter")
-        async def get_filtered_transaction_runs(transaction_id: str,
+        @app.get("/runs/filter")
+        async def get_filtered_transaction_runs(transaction_id: str = '',
                                                 key: str = Query(..., example="date"),
                                                 start: datetime.datetime | None = Query(None, example="2024-02-14"),
                                                 end: datetime.datetime | None = Query(None, example="2030-01-01"),
                                                 value: str | None = Query(None, description="used only for filtering by name as for transactions"),
                                                 type: str | None = None):
             try:
-                self.validate_uuid4(transaction_id)
+                if transaction_id:
+                    self.validate_uuid4(transaction_id)
                 if key == 'date':
                     if not start or not end:
                         return JSONResponse(content={'error': 'Start and end dates are required!'}, status_code=400)
-                    transactions_runs = ORM.Transaction_Run.select()\
-                                       .where(ORM.Transaction_Run.transactionid == transaction_id,
-                                              ORM.Transaction_Run.runstart >= start,
-                                              ORM.Transaction_Run.runstart <= end)
+                    if transaction_id:
+                        transactions_runs = ORM.Transaction_Run.select()\
+                                           .where(ORM.Transaction_Run.transactionid == transaction_id,
+                                                  ORM.Transaction_Run.runstart >= start,
+                                                  ORM.Transaction_Run.runstart <= end)
+                    else:
+                        transactions_runs = ORM.Transaction_Run.select()\
+                                           .where(ORM.Transaction_Run.runstart >= start,
+                                                  ORM.Transaction_Run.runstart <= end)
 
                 else:
                     if not value:
@@ -196,19 +203,23 @@ class Filters(APICore):
                         type = 'eq'
 
                     # get filtering based on type (compatible with bash-like comparison operators)
-                    transactions_runs = ORM.Transaction_Run.select() \
-                        .where(self.bash_comparsion(type, getattr(ORM.Transaction_Run, key), value),
-                               ORM.Transaction_Run.transactionid == transaction_id)
+                    if transaction_id:
+                        transactions_runs = ORM.Transaction_Run.select() \
+                            .where(self.bash_comparsion(type, getattr(ORM.Transaction_Run, key), value),
+                                   ORM.Transaction_Run.transactionid == transaction_id)
+                    else:
+                        transactions_runs = ORM.Transaction_Run.select() \
+                            .where(self.bash_comparsion(type, getattr(ORM.Transaction_Run, key), value))
 
                 if not transactions_runs:
-                    return JSONResponse(content={'error': 'No transactions found!'}, status_code=404)
+                    return JSONResponse(content={'error': 'No transactions runs found!'}, status_code=404)
 
                 subresult = [ORM.BaseModel.extract_data_from_select_dict(transaction_run.__dict__)
                             for transaction_run in transactions_runs]
                 return JSONResponse(content={'transactions_runs': self.json_reserialize(subresult)})
 
             except Exception as e:
-                return JSONResponse(content={'error': f'Error while filtering transactions: {e}'}, status_code=500)
+                return JSONResponse(content={'error': f'Error while filtering transactions runs: {e}'}, status_code=500)
 
 
         @app.get("/transactions/{transaction_id}/steps/{step_id}/runs/filter")

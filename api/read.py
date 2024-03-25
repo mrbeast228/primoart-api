@@ -218,13 +218,18 @@ class GET(APICore):
 
 
         @app.get("/transactions/{transaction_id}/runs")
-        async def get_transaction_runs(transaction_id: str):
+        @app.get("/runs")
+        async def get_transaction_runs(transaction_id: str = ''):
             try:
-                self.validate_uuid4(transaction_id)
+                # make it possible to get list of ALL runs (not only for single transaction)
+                if transaction_id:
+                    self.validate_uuid4(transaction_id)
+                    transaction_runs = ORM.Transaction_Run.select().where(
+                        ORM.Transaction_Run.transactionid == transaction_id).order_by(ORM.Transaction_Run.runend)
+                else:
+                    transaction_runs = ORM.Transaction_Run.select().order_by(ORM.Transaction_Run.runend)
 
-                transaction_runs = ORM.Transaction_Run.select().where(
-                    ORM.Transaction_Run.transactionid == transaction_id).order_by(ORM.Transaction_Run.runend)
-                if not transaction_runs:
+                if transaction_id and not transaction_runs:
                     return JSONResponse(content={'error': 'Transaction runs not found!'}, status_code=404)
 
                 subresult = [ORM.BaseModel.extract_data_from_select_dict(run.__dict__)

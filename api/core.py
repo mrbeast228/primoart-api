@@ -51,3 +51,7 @@ class APICore:
             return not obj1.contains(obj2)
         else:
             raise ValueError('Invalid operator!')
+
+    @staticmethod
+    def get_first_n(iterable, n):
+        return iterable[:n] if n > 0 else iterable

@@ -117,7 +117,7 @@ db = BaseModel._database
 
 
 class Robots(BaseModel):
-    robotid = click.UUIDField()
+    robotid = click.StringField()
     name = click.StringField()
     city = click.StringField()
     lattitude = click.Float64Field()

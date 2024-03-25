@@ -9,8 +9,8 @@ fake = Faker()
 
 class FakeRobot():
 	def __init__(self):
-		self.robotid = uuid.uuid4()
 		self.name = f"robot-{self.get_random_word()}"
+		self.robotid = self.name
 		self.city = f"city-{self.get_random_word()}"
 		self.lattitude = random.uniform(-90, 90)
 		self.longitude = random.uniform(-180, 180)

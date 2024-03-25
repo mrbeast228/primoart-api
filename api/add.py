@@ -202,10 +202,10 @@ class POST(APICore):
                 for run_index in range(len(runs_data['runs'])):
                     run = runs_data['runs'][run_index]
 
-                    if ORM.Transaction_Run.select(). \
-                            where(ORM.Transaction_Run.transactionrunid == run['transactionrunid']):
-                        return JSONResponse(content={'error': f"Run with ID {run['transactionrunid']} already exists!"},
-                                            status_code=409)
+                    #if ORM.Transaction_Run.select(). \
+                    #        where(ORM.Transaction_Run.transactionrunid == run['transactionrunid']):
+                    #    return JSONResponse(content={'error': f"Run with ID {run['transactionrunid']} already exists!"},
+                    #                        status_code=409)
 
                     # same for step_runs
                     if not 'step_runs' in run or not isinstance(run['step_runs'], list):

@@ -20,7 +20,8 @@ class Filters(APICore):
         @app.get("/robots/filter")
         async def get_filtered_robots(key: str = Query(..., example="name"),
                                       value: str = Query(..., example="robot-1"),
-                                      type: str | None = Query(default=None, example="eq")):
+                                      type: str | None = Query(default=None, example="eq"),
+                                      first: int = Query(default=-1, example=5)):
             try:
                 if not value:
                     return JSONResponse(content={'error': 'Filtering value is required!'}, status_code=400)
@@ -34,8 +35,8 @@ class Filters(APICore):
                 if not robots:
                     return JSONResponse(content={'error': 'No robots found!'}, status_code=404)
 
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(robot.__dict__)
-                             for robot in robots]
+                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(robot.__dict__)
+                             for robot in robots], first)
                 return JSONResponse(content={'robots': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -45,7 +46,8 @@ class Filters(APICore):
         @app.get("/services/filter")
         async def get_filtered_services(key: str = Query(..., example="name"),
                                         value: str = Query(..., example="service-1"),
-                                        type: str | None = Query(default=None, example="eq")):
+                                        type: str | None = Query(default=None, example="eq"),
+                                        first: int = Query(default=-1, example=5)):
             try:
                 if not value:
                     return JSONResponse(content={'error': 'Filtering value is required!'}, status_code=400)
@@ -59,8 +61,8 @@ class Filters(APICore):
                 if not services:
                     return JSONResponse(content={'error': 'No services found!'}, status_code=404)
 
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(service.__dict__)
-                             for service in services]
+                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(service.__dict__)
+                             for service in services], first)
                 return JSONResponse(content={'services': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -72,7 +74,8 @@ class Filters(APICore):
         async def get_filtered_processes(key: str = Query(..., example="name"),
                                             value: str = Query(..., example="process-1"),
                                             type: str | None = Query(default=None, example="eq"),
-                                            service_id: str = ''):
+                                            service_id: str = '',
+                                            first: int = Query(default=-1, example=5)):
                 try:
                     if service_id:
                         self.validate_uuid4(service_id)
@@ -94,8 +97,8 @@ class Filters(APICore):
                     if not processes:
                         return JSONResponse(content={'error': 'No processes found!'}, status_code=404)
 
-                    subresult = [ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
-                                for process in processes]
+                    subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
+                                for process in processes], first)
                     return JSONResponse(content={'processes': self.json_reserialize(subresult)})
 
                 except Exception as e:
@@ -107,7 +110,8 @@ class Filters(APICore):
         async def get_filtered_transactions(key: str = Query(..., example="name"),
                                             value: str = Query(..., example="tr-robot-ubuntu"),
                                             type: str | None = Query(default=None, example="eq"),
-                                            process_id: str = ''):
+                                            process_id: str = '',
+                                            first: int = Query(default=-1, example=5)):
             try:
                 if process_id:
                     self.validate_uuid4(process_id)
@@ -129,8 +133,8 @@ class Filters(APICore):
                 if not transactions:
                     return JSONResponse(content={'error': 'No transactions found!'}, status_code=404)
 
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)
-                            for transaction in transactions]
+                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)
+                            for transaction in transactions], first)
                 return JSONResponse(content={'transactions': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -142,7 +146,8 @@ class Filters(APICore):
         async def get_filtered_transaction_steps(key: str = Query(..., example="name"),
                                                  value: str = Query(..., example="step-1"),
                                                  type: str | None = Query(default=None, example="eq"),
-                                                 transaction_id: str = ''):
+                                                 transaction_id: str = '',
+                                                 first: int = Query(default=-1, example=5)):
             try:
                 if transaction_id:
                     self.validate_uuid4(transaction_id)
@@ -164,8 +169,8 @@ class Filters(APICore):
                 if not transaction_steps:
                     return JSONResponse(content={'error': 'No transaction steps found!'}, status_code=404)
 
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(step.__dict__)
-                             for step in transaction_steps]
+                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(step.__dict__)
+                             for step in transaction_steps], first)
                 return JSONResponse(content={'steps': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -179,7 +184,8 @@ class Filters(APICore):
                                                 start: datetime.datetime | None = Query(None, example="2024-02-14"),
                                                 end: datetime.datetime | None = Query(None, example="2030-01-01"),
                                                 value: str | None = Query(None, description="used only for filtering by name as for transactions"),
-                                                type: str | None = None):
+                                                type: str | None = None,
+                                                first: int = Query(default=-1, example=5)):
             try:
                 if transaction_id:
                     self.validate_uuid4(transaction_id)
@@ -214,8 +220,8 @@ class Filters(APICore):
                 if not transactions_runs:
                     return JSONResponse(content={'error': 'No transactions runs found!'}, status_code=404)
 
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(transaction_run.__dict__)
-                            for transaction_run in transactions_runs]
+                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(transaction_run.__dict__)
+                            for transaction_run in transactions_runs], first)
                 return JSONResponse(content={'transactions_runs': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -230,7 +236,8 @@ class Filters(APICore):
                                          end: datetime.datetime | None = Query(None, example="2030-01-01"),
                                          value: str | None = Query(None, description="used only for filtering by name as for steps"),
                                          type: str | None = None,
-                                         transaction_id: str = ''):
+                                         transaction_id: str = '',
+                                         first: int = Query(default=-1, example=5)):
             try:
                 if transaction_id:
                     self.validate_uuid4(transaction_id)
@@ -258,8 +265,8 @@ class Filters(APICore):
                 if not step_runs:
                     return JSONResponse(content={'error': 'No step runs found!'}, status_code=404)
 
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(step_run.__dict__)
-                            for step_run in step_runs]
+                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(step_run.__dict__)
+                            for step_run in step_runs], first)
                 return JSONResponse(content={'step_runs': self.json_reserialize(subresult)})
 
             except Exception as e:

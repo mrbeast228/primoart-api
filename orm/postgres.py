@@ -29,7 +29,7 @@ class BaseModel(peewee.Model):
 
 
 class Robots(BaseModel):
-    robotid = peewee.UUIDField(primary_key=True, unique=True)
+    robotid = peewee.CharField(max_length=1000, primary_key=True, unique=True)
     name = peewee.CharField(max_length=1000)
     city = peewee.CharField(max_length=1000)
     lattitude = peewee.FloatField()

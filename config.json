@@ -1,8 +1,8 @@
 {
-  "db_type": "postgres",
+  "db_type": "clickhouse",
   "db_name": "primoart",
   "db_host": "172.17.0.1",
-  "db_port": "5432",
+  "db_port": "8123",
   "db_user": "primo",
   "db_password": "primo",
   "db_schema": "primo",

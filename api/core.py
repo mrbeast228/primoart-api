@@ -2,6 +2,14 @@ import datetime
 import json
 from uuid import UUID
 
+from orm.config import config
+if config.db_type == 'clickhouse':
+    import orm.clickhouse as ORM
+elif config.db_type == 'postgres':
+    import orm.postgres as ORM
+else:
+    raise TypeError(f'Database {config.db_type} not supported!')
+
 from fastapi import FastAPI
 
 app = FastAPI()
@@ -54,4 +62,11 @@ class APICore:
 
     @staticmethod
     def get_first_n(iterable, n):
-        return iterable[:n] if n > 0 else iterable
+        result = []
+        i = 0
+        for item in iterable:
+            if i == n:
+                break
+            result.append(ORM.BaseModel.extract_data_from_select_dict(item.__dict__))
+            i += 1
+        return result

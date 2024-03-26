@@ -25,7 +25,13 @@ class BaseModel(click.Model):
         for table in tables:
             BaseModel._database.create_table(table)
 
+    @staticmethod
+    def desc(self):
+        return '-' + str(self)
+
     _database.create_tables = create_tables.__get__(_database)
+    click.Field.__neg__ = desc.__get__(click.Field)
+    click.Field.desc = desc.__get__(click.Field)
     click.CharField = click.StringField
     click.FloatField = click.Float64Field
     click.QuerySet.where = click.QuerySet.filter
@@ -92,6 +98,7 @@ class BaseModel(click.Model):
     @classmethod
     def delete(cls, *args):
         cls.select().where(*args).delete()
+
     @classmethod
     def create(cls, **kwargs):
         cls._database.insert([kwargs])
@@ -120,7 +127,7 @@ class Robots(BaseModel):
     robotid = click.StringField()
     name = click.StringField()
     city = click.StringField()
-    lattitude = click.Float64Field()
+    latitude = click.Float64Field()
     longitude = click.Float64Field()
     ipaddr = click.StringField()
     createddatetime = click.DateTime64Field(precision=6)

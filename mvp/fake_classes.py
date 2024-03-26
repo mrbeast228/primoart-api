@@ -12,7 +12,7 @@ class FakeRobot():
 		self.name = f"robot-{self.get_random_word()}"
 		self.robotid = self.name
 		self.city = f"city-{self.get_random_word()}"
-		self.lattitude = random.uniform(-90, 90)
+		self.latitude = random.uniform(-90, 90)
 		self.longitude = random.uniform(-180, 180)
 		self.ipaddr = fake.ipv4()
 		self.createddatetime = fake.date_time_this_year()
@@ -129,9 +129,9 @@ class FakeStepRun():
 		self.errorcode = self.get_error_code(self.runresult)
 
 	def get_run_result(self):
-		result = ["OK" for i in range(22)]
-		result.extend(["WARNING", "FAIL"])
-		return random.choice(result)
+		result = ["OK", "WARNING", "FAIL"]
+		probabilities = (350, 1, 1)
+		return random.choices(result, weights=probabilities, k=1)[0]
 
 	def get_error_code(self, runresult):
 		error_codes = {"OK": 0, "WARNING": 1, "FAIL": 2}

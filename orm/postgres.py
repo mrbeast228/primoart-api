@@ -32,7 +32,7 @@ class Robots(BaseModel):
     robotid = peewee.CharField(max_length=1000, primary_key=True, unique=True)
     name = peewee.CharField(max_length=1000)
     city = peewee.CharField(max_length=1000)
-    lattitude = peewee.FloatField()
+    latitude = peewee.FloatField()
     longitude = peewee.FloatField()
     ipaddr = peewee.CharField(max_length=1000)
     createddatetime = peewee.DateTimeField()

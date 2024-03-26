@@ -19,8 +19,7 @@ class GET(APICore):
         async def get_robots(first: int = -1):
             try:
                 robots = ORM.Robots.select()
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(robot.__dict__)
-                             for robot in robots], first)
+                subresult = self.get_first_n(robots, first)
                 return JSONResponse(content={'robots': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -31,8 +30,7 @@ class GET(APICore):
         async def get_services(first: int = -1):
             try:
                 services = ORM.Services.select()
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(service.__dict__)
-                             for service in services], first)
+                subresult = self.get_first_n(services, first)
                 return JSONResponse(content={'services': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -68,8 +66,7 @@ class GET(APICore):
                 if service_id and not business_processes:
                     return JSONResponse(content={'error': 'Business processes not found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
-                             for process in business_processes], first)
+                subresult = self.get_first_n(business_processes, first)
                 return JSONResponse(content={'business_processes': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -109,8 +106,7 @@ class GET(APICore):
                 if process_id and not transactions:
                     return JSONResponse(content={'error': 'Transactions not found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)
-                             for transaction in transactions], first)
+                subresult = self.get_first_n(transactions, first)
                 return JSONResponse(content={'transactions': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -149,8 +145,7 @@ class GET(APICore):
                 if transaction_id and not transaction_steps:
                     return JSONResponse(content={'error': 'Transaction steps not found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(step.__dict__)
-                             for step in transaction_steps], first)
+                subresult = self.get_first_n(transaction_steps, first)
                 return JSONResponse(content={'steps': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -185,12 +180,11 @@ class GET(APICore):
                 self.validate_uuid4(step_id)
 
                 step_runs = ORM.Step_Run.select()\
-                    .where(ORM.Step_Run.stepid == step_id).order_by(ORM.Step_Run.runend)
+                    .where(ORM.Step_Run.stepid == step_id).order_by(-ORM.Step_Run.runend)
                 if not step_runs:
                     return JSONResponse(content={'error': 'Step runs not found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(run.__dict__)
-                             for run in step_runs][::-1], first) # Clickhouse doesn't support desc() in ORM :(
+                subresult = self.get_first_n(step_runs, first)
                 return JSONResponse(content={'step_runs': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -225,15 +219,14 @@ class GET(APICore):
                 if transaction_id:
                     self.validate_uuid4(transaction_id)
                     transaction_runs = ORM.Transaction_Run.select().where(
-                        ORM.Transaction_Run.transactionid == transaction_id).order_by(ORM.Transaction_Run.runend)
+                        ORM.Transaction_Run.transactionid == transaction_id).order_by(-ORM.Transaction_Run.runend)
                 else:
-                    transaction_runs = ORM.Transaction_Run.select().order_by(ORM.Transaction_Run.runend)
+                    transaction_runs = ORM.Transaction_Run.select().order_by(-ORM.Transaction_Run.runend)
 
                 if transaction_id and not transaction_runs:
                     return JSONResponse(content={'error': 'Transaction runs not found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(run.__dict__)
-                             for run in transaction_runs][::-1], first) # Clickhouse doesn't support desc() in ORM :(
+                subresult = self.get_first_n(transaction_runs, first)
                 return JSONResponse(content={'runs': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -268,12 +261,11 @@ class GET(APICore):
                 self.validate_uuid4(run_id)
 
                 run_steps = ORM.Step_Run.select()\
-                    .where(ORM.Step_Run.transactionrunid == run_id).order_by(ORM.Step_Run.runend)
+                    .where(ORM.Step_Run.transactionrunid == run_id).order_by(-ORM.Step_Run.runend)
                 if not run_steps:
                     return JSONResponse(content={'error': 'Run steps not found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(step.__dict__)
-                             for step in run_steps][::-1], first) # Clickhouse doesn't support desc() in ORM :(
+                subresult = self.get_first_n(run_steps, first)
                 return JSONResponse(content={'step_runs': self.json_reserialize(subresult)})
 
             except Exception as e:

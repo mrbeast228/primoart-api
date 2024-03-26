@@ -22,7 +22,7 @@ class POST(APICore):
                                                                         [{"robotid": "ffffffff-5e33-4d88-9ae8-1aa7aa556066",
                                                                              "name": "robot-windows",
                                                                              "city": "New York",
-                                                                             "lattitude": 40.7128,
+                                                                             "latitude": 40.7128,
                                                                              "longitude": -74.0060,
                                                                              "createddatetime": "2024-02-10 03:12:00.841588+00:00",
                                                                              "createdby": "Admin"}]

@@ -35,8 +35,7 @@ class Filters(APICore):
                 if not robots:
                     return JSONResponse(content={'error': 'No robots found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(robot.__dict__)
-                             for robot in robots], first)
+                subresult = self.get_first_n(robots, first)
                 return JSONResponse(content={'robots': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -61,8 +60,7 @@ class Filters(APICore):
                 if not services:
                     return JSONResponse(content={'error': 'No services found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(service.__dict__)
-                             for service in services], first)
+                subresult = self.get_first_n(services, first)
                 return JSONResponse(content={'services': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -97,8 +95,7 @@ class Filters(APICore):
                     if not processes:
                         return JSONResponse(content={'error': 'No processes found!'}, status_code=404)
 
-                    subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
-                                for process in processes], first)
+                    subresult = self.get_first_n(processes, first)
                     return JSONResponse(content={'processes': self.json_reserialize(subresult)})
 
                 except Exception as e:
@@ -133,8 +130,7 @@ class Filters(APICore):
                 if not transactions:
                     return JSONResponse(content={'error': 'No transactions found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)
-                            for transaction in transactions], first)
+                subresult = self.get_first_n(transactions, first)
                 return JSONResponse(content={'transactions': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -169,8 +165,7 @@ class Filters(APICore):
                 if not transaction_steps:
                     return JSONResponse(content={'error': 'No transaction steps found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(step.__dict__)
-                             for step in transaction_steps], first)
+                subresult = self.get_first_n(transaction_steps, first)
                 return JSONResponse(content={'steps': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -220,8 +215,7 @@ class Filters(APICore):
                 if not transactions_runs:
                     return JSONResponse(content={'error': 'No transactions runs found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(transaction_run.__dict__)
-                            for transaction_run in transactions_runs], first)
+                subresult = self.get_first_n(transactions_runs, first)
                 return JSONResponse(content={'transactions_runs': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -265,8 +259,7 @@ class Filters(APICore):
                 if not step_runs:
                     return JSONResponse(content={'error': 'No step runs found!'}, status_code=404)
 
-                subresult = self.get_first_n([ORM.BaseModel.extract_data_from_select_dict(step_run.__dict__)
-                            for step_run in step_runs], first)
+                subresult = self.get_first_n(step_runs, first)
                 return JSONResponse(content={'step_runs': self.json_reserialize(subresult)})
 
             except Exception as e:

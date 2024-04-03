@@ -1,22 +1,5 @@
 version: "3.9"
 services:
-  clickhouse:
-    image: clickhouse/clickhouse-server
-    container_name: clickhouse
-    hostname: clickhouse
-    volumes:
-      - ./clickhouse/config.xml:/etc/clickhouse-server/config.d/config.xml
-      - ./clickhouse/data/:/var/lib/clickhouse/
-      - ./clickhouse/logs/:/var/log/clickhouse-server/
-    ports:
-      - "8123:8123"
-      - "9000:9000"
-    environment:
-      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
-      CLICKHOUSE_DB: "primoart"
-      CLICKHOUSE_USER: "primo"
-      CLICKHOUSE_PASSWORD: "primo"
-
   postgres:
     image: postgres:13.3
     container_name: postgres-primoart

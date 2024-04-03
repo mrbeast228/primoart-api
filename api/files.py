@@ -15,7 +15,7 @@ class Files(APICore):
         self.logs_dir = Path(__file__).parent / '..' / config.logs_dir
         self.screenshots_dir = Path(__file__).parent / '..' / config.screenshots_dir
 
-        @app.get("/logs/{log_id}")
+        @app.get("/logs/{log_id}", tags=['Receive files'])
         async def get_log(log_id: str):
             try:
                 self.validate_uuid4(log_id)
@@ -30,7 +30,7 @@ class Files(APICore):
                 return JSONResponse(content={'error': f'Error while getting log {log_id}: {e}'}, status_code=500)
 
         # get log file from POST
-        @app.post("/logs")
+        @app.post("/logs", tags=['Upload files'])
         async def create_log(file: bytes = File(...)):
             try:
                 log_id = str(uuid.uuid4())
@@ -43,7 +43,7 @@ class Files(APICore):
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while creating log: {e}'}, status_code=500)
 
-        @app.get("/screenshots/{screenshot_id}")
+        @app.get("/screenshots/{screenshot_id}", tags=['Receive files'])
         async def get_screenshot(screenshot_id: str):
             try:
                 self.validate_uuid4(screenshot_id)
@@ -58,7 +58,7 @@ class Files(APICore):
                 return JSONResponse(content={'error': f'Error while getting screenshot {screenshot_id}: {e}'}, status_code=500)
 
         # get screenshot file from POST
-        @app.post("/screenshots")
+        @app.post("/screenshots", tags=['Upload files'])
         async def create_screenshot(file: UploadFile = File(...)):
             try:
                 screenshot_id = str(uuid.uuid4())

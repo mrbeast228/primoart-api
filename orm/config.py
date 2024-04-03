@@ -7,7 +7,6 @@ if not main_config_file.exists():
     exit(1)
 
 class Config:
-    db_type = ''
     db_host = ''
     db_port = 0
     db_name = ''

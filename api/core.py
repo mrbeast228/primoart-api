@@ -1,16 +1,10 @@
 import datetime
+from dateutil import parser
 import json
 from uuid import UUID
 
-from orm.config import config
-if config.db_type == 'clickhouse':
-    import orm.clickhouse as ORM
-elif config.db_type == 'postgres':
-    import orm.postgres as ORM
-else:
-    raise TypeError(f'Database {config.db_type} not supported!')
-
 from fastapi import FastAPI
+import orm.postgres as ORM
 
 app = FastAPI()
 
@@ -61,12 +55,16 @@ class APICore:
             raise ValueError('Invalid operator!')
 
     @staticmethod
-    def get_first_n(iterable, n):
-        result = []
-        i = 0
-        for item in iterable:
-            if i == n:
-                break
-            result.append(ORM.BaseModel.extract_data_from_select_dict(item.__dict__))
-            i += 1
-        return result
+    def str_to_datetime(date_string):
+        try:
+            return parser.parse(date_string)
+        except Exception:
+            return None
+
+    @staticmethod
+    def extract_page(select, page, per_page):
+        if page < 1 or per_page < 1:
+            return [ORM.BaseModel.extract_data_from_select_dict(el.__dict__) for el in select] # all elements
+
+        return [ORM.BaseModel.extract_data_from_select_dict(el.__dict__)
+                for el in select.paginate(page, per_page)]

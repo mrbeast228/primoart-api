@@ -5,7 +5,7 @@ from api.core import app, APICore
 from api.add import POST
 from api.edit import PUT
 from api.read import GET
-from api.filters import Filters
+from api.remove import DELETE
 from api.files import Files
 
 from orm.config import config
@@ -32,11 +32,10 @@ class API(APICore):
 
     def implement_methods(self):
         # constructors of classes adding decorated functions for FastAPI
-        # filters must be first!!!
-        Filters()
         GET()
         POST()
         PUT()
+        DELETE()
         Files()
 
     def run(self):

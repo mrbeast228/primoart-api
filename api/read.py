@@ -1,12 +1,8 @@
+from fastapi import Body
 from starlette.responses import JSONResponse
 
-from orm.config import config
-if config.db_type == 'clickhouse':
-    import orm.clickhouse as ORM
-elif config.db_type == 'postgres':
-    import orm.postgres as ORM
-else:
-    raise TypeError(f'Database {config.db_type} not supported!')
+import orm.postgres as ORM # for now only Postgres is supported
+
 from api.core import APICore, app
 
 
@@ -14,279 +10,378 @@ class GET(APICore):
     def __init__(self):
         super().__init__()
 
-
-        @app.get("/robots")
-        async def get_robots(first: int = -1):
+        # New arch from Demichev - now all get requests has JSON body, by default it's empty
+        @app.get("/robots", tags=['Read data'])
+        async def get_robots(filter_body: dict = Body({}, openapi_examples={
+            'Filter by city': {
+                'description': 'Find robots located in a specific city',
+                'value': {"city": "New York"}
+            },
+            'Filter by name and city': {
+                'description': 'Find robots by name located in a specific city',
+                'value': {"name": "RoboX", "city": "Tokyo"}
+            },
+            'Filter by datetime and city': {
+                'description': 'Find robots created within a specific datetime range',
+                'value': {"start": "2023-01-01T00:00:00", "end": "2023-12-31T23:59:59", "city": "Moscow"}
+            },
+            'Pagination': {
+                'description': 'Get first 5 robots',
+                'value': {"page": 1, "per_page": 5}
+            }
+        })):
             try:
-                robots = ORM.Robots.select()
-                subresult = self.get_first_n(robots, first)
+                page = filter_body.pop('page', -1)
+                per_page = filter_body.pop('per_page', -1)
+
+                try:
+                    start_date = self.str_to_datetime(filter_body.pop('start'))
+                    end_date = self.str_to_datetime(filter_body.pop('end'))
+                    if start_date and end_date:
+                        robots = ORM.Robots.select().where(ORM.Robots.createddatetime >= start_date,
+                                                            ORM.Robots.createddatetime <= end_date)
+                    else:
+                        raise KeyError
+                except KeyError:
+                    robots = ORM.Robots.select()
+
+                for key, value in filter_body.items():
+                    robots = robots.where(getattr(ORM.Robots, key) == value)
+
+                subresult = self.extract_page(robots, page, per_page)
+
                 return JSONResponse(content={'robots': self.json_reserialize(subresult)})
 
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while getting robots: {e}'}, status_code=500)
 
-
-        @app.get("/services")
-        async def get_services(first: int = -1):
+        @app.get("/robots/<robot_id>", tags=['Read data'])
+        async def get_robot_by_id(robot_id: str):
             try:
-                services = ORM.Services.select()
-                subresult = self.get_first_n(services, first)
+                self.validate_uuid4(robot_id)
+                robot = ORM.Robots.get(ORM.Robots.robotid == robot_id)
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(robot.__dict__)]
+
+                return JSONResponse(content={'robot': self.json_reserialize(subresult)})
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting robot by id: {e}'}, status_code=500)
+
+        @app.get("/processes", tags=['Read data'])
+        async def get_processes(filter_body: dict = Body({}, openapi_examples={
+            'Filter by name': {
+                'description': 'Find processes by name',
+                'value': {"name": "Process 1"}
+            },
+            'Filter by datetime and creator': {
+                'description': 'Find processes created within a specific datetime range',
+                'value': {"start": "2023-01-01T00:00:00", "end": "2023-12-31T23:59:59", "createdby": "Admin"}
+            },
+            'Pagination': {
+                'description': 'Get first 5 processes',
+                'value': {"page": 1, "per_page": 5}
+            }
+        })):
+            try:
+                page = filter_body.pop('page', -1)
+                per_page = filter_body.pop('per_page', -1)
+
+                try:
+                    start_date = self.str_to_datetime(filter_body.pop('start'))
+                    end_date = self.str_to_datetime(filter_body.pop('end'))
+                    if start_date and end_date:
+                        processes = ORM.Process.select().where(ORM.Process.createddatetime >= start_date,
+                                                              ORM.Process.createddatetime <= end_date)
+                    else:
+                        raise KeyError
+                except KeyError:
+                    processes = ORM.Process.select()
+
+                for key, value in filter_body.items():
+                    processes = processes.where(getattr(ORM.Process, key) == value)
+
+                subresult = self.extract_page(processes, page, per_page)
+
+                return JSONResponse(content={'processes': self.json_reserialize(subresult)})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting processes: {e}'}, status_code=500)
+
+        @app.get("/processes/<process_id>", tags=['Read data'])
+        async def get_process_by_id(process_id: str):
+            try:
+                self.validate_uuid4(process_id)
+                process = ORM.Process.get(ORM.Process.processid == process_id)
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(process.__dict__)]
+
+                return JSONResponse(content={'process': self.json_reserialize(subresult)})
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting process by id: {e}'}, status_code=500)
+
+        @app.get("/services", tags=['Read data'])
+        async def get_services(filter_body: dict = Body({}, openapi_examples={
+            'Filter by process ID': {
+                'description': 'Find services belonging to a specific process',
+                'value': {"processid": "fbac34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b"}
+            },
+            'Filter by name and state': {
+                'description': 'Find services by name with a specific state',
+                'value': {"name": "ServiceX", "state": "ACTIVE"}
+            },
+            'Datetime filtering': {
+                'description': 'Find services created within a specific datetime range',
+                'value': {"start": "2023-01-01T00:00:00", "end": "2023-12-31T23:59:59"}
+            },
+            'Pagination': {
+                'description': 'Get first 10 services',
+                'value': {"page": 1, "per_page": 10}
+            }
+        })):
+            try:
+                page = filter_body.pop('page', -1)
+                per_page = filter_body.pop('per_page', -1)
+
+                try:
+                    start_date = self.str_to_datetime(filter_body.pop('start'))
+                    end_date = self.str_to_datetime(filter_body.pop('end'))
+                    if start_date and end_date:
+                        services = ORM.Service.select().where(ORM.Service.createddatetime >= start_date,
+                                                              ORM.Service.createddatetime <= end_date)
+                    else:
+                        raise KeyError
+                except KeyError:
+                    services = ORM.Service.select()
+
+                for key, value in filter_body.items():
+                    services = services.where(getattr(ORM.Service, key) == value)
+
+                subresult = self.extract_page(services, page, per_page)
+
                 return JSONResponse(content={'services': self.json_reserialize(subresult)})
 
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while getting services: {e}'}, status_code=500)
 
-
-        @app.get("/services/{service_id}")
+        @app.get("/services/<service_id>", tags=['Read data'])
         async def get_service_by_id(service_id: str):
             try:
                 self.validate_uuid4(service_id)
+                service = ORM.Service.get(ORM.Service.serviceid == service_id)
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(service.__dict__)]
 
-                services = ORM.Services.select().where(ORM.Services.serviceid == service_id)
-                if not services:
-                    return JSONResponse(content={'error': 'Service not found!'}, status_code=404)
-
-                result_service = ORM.BaseModel.extract_data_from_select_dict(services[0].__dict__)
-                return JSONResponse(content={'services': [self.json_reserialize(result_service)]})
-
+                return JSONResponse(content={'service': self.json_reserialize(subresult)})
             except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting service: {e}'}, status_code=500)
+                return JSONResponse(content={'error': f'Error while getting service by id: {e}'}, status_code=500)
 
-
-        @app.get("/services/{service_id}/business_processes")
-        @app.get("/business_processes")
-        async def get_service_business_processes(service_id: str = '', first: int = -1):
+        @app.get("/transactions", tags=['Read data'])
+        async def get_transactions(filter_body: dict = Body({}, openapi_examples={
+            'Filter by service ID': {
+                'description': 'Find transactions related to a specific service',
+                'value': {"serviceid": "fab34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b"}
+            },
+            'Datetime filtering': {
+                'description': 'Find transactions created within a specific datetime range',
+                'value': {"start": "2023-01-01T00:00:00", "end": "2023-12-31T23:59:59"}
+            },
+            'Pagination': {
+                'description': 'Get first 10 transactions related to a specific service',
+                'value': {"serviceid": "fab34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b", "page": 1, "per_page": 10}
+            }
+        })):
             try:
-                if service_id:
-                    self.validate_uuid4(service_id)
-                    business_processes = ORM.Business_Process.select().where(
-                        ORM.Business_Process.serviceid == service_id)
-                else:
-                    business_processes = ORM.Business_Process.select()
-                if service_id and not business_processes:
-                    return JSONResponse(content={'error': 'Business processes not found!'}, status_code=404)
+                page = filter_body.pop('page', -1)
+                per_page = filter_body.pop('per_page', -1)
 
-                subresult = self.get_first_n(business_processes, first)
-                return JSONResponse(content={'business_processes': self.json_reserialize(subresult)})
-
-            except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting business processes: {e}'}, status_code=500)
-
-
-        @app.get("/services/{service_id}/business_processes/{process_id}")
-        @app.get("/business_processes/{process_id}")
-        async def get_business_process_by_id(process_id: str, service_id: str = ''):
-            try:
-                if service_id:
-                    self.validate_uuid4(service_id)
-                self.validate_uuid4(process_id)
-
-                process = ORM.Business_Process.select().where(ORM.Business_Process.processid == process_id)[0]
-                if not process:
-                    return JSONResponse(content={'error': 'Business process not found!'}, status_code=404)
-
-                result_process = ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
-                return JSONResponse(content={'business_processes': [self.json_reserialize(result_process)]})
-
-            except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting business process: {e}'}, status_code=500)
-
-
-        @app.get("/services/{service_id}/business_processes/{process_id}/transactions")
-        @app.get("/business_processes/{process_id}/transactions")
-        @app.get("/transactions")
-        async def get_transactions(process_id: str = '', first: int = -1):
-            try:
-                if process_id:
-                    self.validate_uuid4(process_id)
-                    transactions = ORM.Transaction.select().where(ORM.Transaction.processid == process_id)
-                else:
+                try:
+                    start_date = self.str_to_datetime(filter_body.pop('start'))
+                    end_date = self.str_to_datetime(filter_body.pop('end'))
+                    if start_date and end_date:
+                        transactions = ORM.Transaction.select().where(ORM.Transaction.createddatetime >= start_date,
+                                                                    ORM.Transaction.createddatetime <= end_date)
+                    else:
+                        raise KeyError
+                except KeyError:
                     transactions = ORM.Transaction.select()
 
-                if process_id and not transactions:
-                    return JSONResponse(content={'error': 'Transactions not found!'}, status_code=404)
+                for key, value in filter_body.items():
+                    transactions = transactions.where(getattr(ORM.Transaction, key) == value)
 
-                subresult = self.get_first_n(transactions, first)
+                subresult = self.extract_page(transactions, page, per_page)
+
                 return JSONResponse(content={'transactions': self.json_reserialize(subresult)})
 
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while getting transactions: {e}'}, status_code=500)
 
-
-        @app.get("/transactions/{transaction_id}")
+        @app.get("/transactions/<transaction_id>", tags=['Read data'])
         async def get_transaction_by_id(transaction_id: str):
             try:
                 self.validate_uuid4(transaction_id)
+                transaction = ORM.Transaction.get(ORM.Transaction.transactionid == transaction_id)
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)]
 
-                transactions = ORM.Transaction.select()\
-                    .where(ORM.Transaction.transactionid == transaction_id)
-                if not transactions:
-                    return JSONResponse(content={'error': 'Transaction not found!'}, status_code=404)
-
-                result_transaction = ORM.BaseModel.extract_data_from_select_dict(transactions[0].__dict__)
-                return JSONResponse(content={'transactions': [self.json_reserialize(result_transaction)]})
-
+                return JSONResponse(content={'transaction': self.json_reserialize(subresult)})
             except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting transaction: {e}'}, status_code=500)
+                return JSONResponse(content={'error': f'Error while getting transaction by id: {e}'}, status_code=500)
 
-
-        @app.get("/transactions/{transaction_id}/steps")
-        @app.get("/steps")
-        async def get_transaction_steps(transaction_id: str = '', first: int = -1):
+        @app.get("/steps", tags=['Read data'])
+        async def get_steps(filter_body: dict = Body({}, openapi_examples={
+            'Filter by transaction ID': {
+                'description': 'Find steps belonging to a specific transaction',
+                'value': {"transactionid": "ab2c34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b"}
+            },
+            'Datetime filtering': {
+                'description': 'Find steps created within a specific datetime range',
+                'value': {"start": "2023-01-01T00:00:00", "end": "2023-12-31T23:59:59"}
+            },
+            'Pagination': {
+                'description': 'Get first 5 steps related to a specific transaction',
+                'value': {"transactionid": "ab2c34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b", "page": 1, "per_page": 5}
+            }
+        })):
             try:
-                # make it possible to get list of ALL steps (not only for single transaction) for MVP
-                if transaction_id:
-                    self.validate_uuid4(transaction_id)
-                    transaction_steps = ORM.Step_Info.select().where(
-                        ORM.Step_Info.transactionid == transaction_id)
-                else:
-                    transaction_steps = ORM.Step_Info.select()
+                page = filter_body.pop('page', -1)
+                per_page = filter_body.pop('per_page', -1)
 
-                if transaction_id and not transaction_steps:
-                    return JSONResponse(content={'error': 'Transaction steps not found!'}, status_code=404)
+                try:
+                    start_date = self.str_to_datetime(filter_body.pop('start'))
+                    end_date = self.str_to_datetime(filter_body.pop('end'))
+                    if start_date and end_date:
+                        steps = ORM.Step_Info.select().where(ORM.Step_Info.createddatetime >= start_date,
+                                                             ORM.Step_Info.createddatetime <= end_date)
+                    else:
+                        raise KeyError
+                except KeyError:
+                    steps = ORM.Step_Info.select()
 
-                subresult = self.get_first_n(transaction_steps, first)
+                for key, value in filter_body.items():
+                    steps = steps.where(getattr(ORM.Step_Info, key) == value)
+
+                subresult = self.extract_page(steps, page, per_page)
+
                 return JSONResponse(content={'steps': self.json_reserialize(subresult)})
 
             except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting transaction steps: {e}'}, status_code=500)
+                return JSONResponse(content={'error': f'Error while getting steps: {e}'}, status_code=500)
 
-
-        @app.get("/transactions/{transaction_id}/steps/{step_id}")
-        @app.get("/steps/{step_id}")
-        async def get_transaction_step_by_id(step_id: str, transaction_id: str = ''):
+        @app.get("/steps/<step_id>", tags=['Read data'])
+        async def get_step_by_id(step_id: str):
             try:
-                if transaction_id:
-                    self.validate_uuid4(transaction_id)
                 self.validate_uuid4(step_id)
+                step = ORM.Step_Info.get(ORM.Step_Info.stepid == step_id)
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(step.__dict__)]
 
-                step = ORM.Step_Info.select().where(ORM.Step_Info.stepid == step_id)[0]
-                if not step:
-                    return JSONResponse(content={'error': 'Step not found!'}, status_code=404)
+                return JSONResponse(content={'step': self.json_reserialize(subresult)})
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting step by id: {e}'}, status_code=500)
 
-                result_step = ORM.BaseModel.extract_data_from_select_dict(step.__dict__)
-                return JSONResponse(content={'steps': [self.json_reserialize(result_step)]})
+        # transactions runs
+        @app.get("/runs", tags=['Read data'])
+        async def get_runs(filter_body: dict = Body({}, openapi_examples={
+            'Filter by transaction ID': {
+                'description': 'Find transaction runs belonging to a specific transaction',
+                'value': {"transactionid": "ab2c34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b"}
+            },
+            'Datetime filtering': {
+                'description': 'Find transaction runs that started and ended within a specific datetime range',
+                'value': {"start": "2023-01-01T00:00:00", "end": "2023-12-31T23:59:59"}
+            },
+            'Pagination': {
+                'description': 'Get 11-20 runs related to a specific transaction ordered by descending end date',
+                'value': {"transactionid": "ab2c34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b", "page": 2, "per_page": 10}
+            }
+        })):
+            try:
+                page = filter_body.pop('page', -1)
+                per_page = filter_body.pop('per_page', -1)
+
+                try:
+                    start_date = self.str_to_datetime(filter_body.pop('start'))
+                    end_date = self.str_to_datetime(filter_body.pop('end'))
+                    if start_date and end_date:
+                        runs = ORM.Transaction_Run.select()\
+                                                  .where(ORM.Transaction_Run.runstart >= start_date,
+                                                         ORM.Transaction_Run.runend <= end_date)\
+                                                  .order_by(-ORM.Transaction_Run.runend)
+                    else:
+                        raise KeyError
+                except KeyError:
+                    runs = ORM.Transaction_Run.select().order_by(-ORM.Transaction_Run.runend)
+
+                for key, value in filter_body.items():
+                    runs = runs.where(getattr(ORM.Transaction_Run, key) == value)
+
+                subresult = self.extract_page(runs, page, per_page)
+
+                return JSONResponse(content={'runs': self.json_reserialize(subresult)})
 
             except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting step: {e}'}, status_code=500)
+                return JSONResponse(content={'error': f'Error while getting runs: {e}'}, status_code=500)
 
-
-        @app.get("/transactions/{transaction_id}/steps/{step_id}/runs")
-        @app.get("/steps/{step_id}/runs")
-        async def get_step_runs(step_id: str, transaction_id: str = '', first: int = -1):
+        @app.get("/runs/<run_id>", tags=['Read data'])
+        async def get_run_by_id(run_id: str):
             try:
-                if transaction_id:
-                    self.validate_uuid4(transaction_id)
-                self.validate_uuid4(step_id)
+                self.validate_uuid4(run_id)
+                run = ORM.Transaction_Run.get(ORM.Transaction_Run.transactionrunid == run_id)
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(run.__dict__)]
 
-                step_runs = ORM.Step_Run.select()\
-                    .where(ORM.Step_Run.stepid == step_id).order_by(-ORM.Step_Run.runend)
-                if not step_runs:
-                    return JSONResponse(content={'error': 'Step runs not found!'}, status_code=404)
+                return JSONResponse(content={'run': self.json_reserialize(subresult)})
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting run by id: {e}'}, status_code=500)
 
-                subresult = self.get_first_n(step_runs, first)
+        # steps runs, connection by transactionrunid and stepid
+        @app.get("/step_runs", tags=['Read data'])
+        async def get_step_runs(filter_body: dict = Body({}, openapi_examples={
+                'Filter by transaction run': {
+                    'description': 'Find all step runs with equal transaction run ID',
+                    'value': {"transactionrunid": "fbac34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b"}
+                },
+                'Filter by step': {
+                    'description': 'Find all step runs with equal step ID',
+                    'value': {"stepid": "fbac34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b"}
+                },
+                'Datetime filtering': {
+                    'description': 'Find step runs that started and ended within a specific datetime range',
+                    'value': {"start": "2023-01-01T00:00:00", "end": "2023-12-31T23:59:59"}
+                },
+                'Pagination': {
+                    'description': 'Get first 5 step runs related to a specific transaction run',
+                    'value': {"transactionrunid": "fbac34a0-0b3b-4b3b-8b3b-0b3b4b3b4b3b", "page": 1, "per_page": 5}
+                }
+            })):
+            try:
+                page = filter_body.pop('page', -1)
+                per_page = filter_body.pop('per_page', -1)
+
+                try:
+                    start_date = self.str_to_datetime(filter_body.pop('start'))
+                    end_date = self.str_to_datetime(filter_body.pop('end'))
+                    if start_date and end_date:
+                        step_runs = ORM.Step_Run.select()\
+                                                .where(ORM.Step_Run.runstart >= start_date,
+                                                       ORM.Step_Run.runend <= end_date)\
+                                                .order_by(-ORM.Step_Run.runend)
+                    else:
+                        raise KeyError
+                except KeyError:
+                    step_runs = ORM.Step_Run.select().order_by(-ORM.Step_Run.runend)
+
+                for key, value in filter_body.items():
+                    step_runs = step_runs.where(getattr(ORM.Step_Run, key) == value)
+
+                subresult = self.extract_page(step_runs, page, per_page)
+
                 return JSONResponse(content={'step_runs': self.json_reserialize(subresult)})
 
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while getting step runs: {e}'}, status_code=500)
 
-
-        @app.get("/transactions/{transaction_id}/steps/{step_id}/runs/{run_id}")
-        @app.get("/steps/{step_id}/runs/{run_id}")
-        async def get_step_run_by_id(run_id: str, step_id: str, transaction_id: str = ''):
+        @app.get("/step_runs/<step_run_id>", tags=['Read data'])
+        async def get_step_run_by_id(step_run_id: str):
             try:
-                if transaction_id:
-                    self.validate_uuid4(transaction_id)
-                self.validate_uuid4(step_id)
-                self.validate_uuid4(run_id)
+                self.validate_uuid4(step_run_id)
+                step_run = ORM.Step_Run.get(ORM.Step_Run.steprunid == step_run_id)
+                subresult = [ORM.BaseModel.extract_data_from_select_dict(step_run.__dict__)]
 
-                run = ORM.Step_Run.select().where(ORM.Step_Run.steprunid == run_id)[0]
-                if not run:
-                    return JSONResponse(content={'error': 'Run not found!'}, status_code=404)
-
-                result_run = ORM.BaseModel.extract_data_from_select_dict(run.__dict__)
-                return JSONResponse(content={'step_runs': [self.json_reserialize(result_run)]})
-
+                return JSONResponse(content={'step_run': self.json_reserialize(subresult)})
             except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting run: {e}'}, status_code=500)
-
-
-        @app.get("/transactions/{transaction_id}/runs")
-        @app.get("/runs")
-        async def get_transaction_runs(transaction_id: str = '', first: int = -1):
-            try:
-                # make it possible to get list of ALL runs (not only for single transaction)
-                if transaction_id:
-                    self.validate_uuid4(transaction_id)
-                    transaction_runs = ORM.Transaction_Run.select().where(
-                        ORM.Transaction_Run.transactionid == transaction_id).order_by(-ORM.Transaction_Run.runend)
-                else:
-                    transaction_runs = ORM.Transaction_Run.select().order_by(-ORM.Transaction_Run.runend)
-
-                if transaction_id and not transaction_runs:
-                    return JSONResponse(content={'error': 'Transaction runs not found!'}, status_code=404)
-
-                subresult = self.get_first_n(transaction_runs, first)
-                return JSONResponse(content={'runs': self.json_reserialize(subresult)})
-
-            except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting transaction runs: {e}'}, status_code=500)
-
-
-        @app.get("/transactions/{transaction_id}/runs/{run_id}")
-        @app.get("/runs/{run_id}")
-        async def get_transaction_run_by_id(run_id: str, transaction_id: str = ''):
-            try:
-                if transaction_id:
-                    self.validate_uuid4(transaction_id)
-                self.validate_uuid4(run_id)
-
-                runs = ORM.Transaction_Run.select().where(ORM.Transaction_Run.transactionrunid == run_id)
-                if not runs:
-                    return JSONResponse(content={'error': 'Run not found!'}, status_code=404)
-
-                result_run = ORM.BaseModel.extract_data_from_select_dict(runs[0].__dict__)
-                return JSONResponse(content={'runs': [self.json_reserialize(result_run)]})
-
-            except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting run: {e}'}, status_code=500)
-
-
-        @app.get("/transactions/{transaction_id}/runs/{run_id}/steps")
-        @app.get("/runs/{run_id}/steps")
-        async def get_run_steps(run_id: str, transaction_id: str = '', first: int = -1):
-            try:
-                if transaction_id:
-                    self.validate_uuid4(transaction_id)
-                self.validate_uuid4(run_id)
-
-                run_steps = ORM.Step_Run.select()\
-                    .where(ORM.Step_Run.transactionrunid == run_id).order_by(-ORM.Step_Run.runend)
-                if not run_steps:
-                    return JSONResponse(content={'error': 'Run steps not found!'}, status_code=404)
-
-                subresult = self.get_first_n(run_steps, first)
-                return JSONResponse(content={'step_runs': self.json_reserialize(subresult)})
-
-            except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting run steps: {e}'}, status_code=500)
-
-
-        @app.get("/transactions/{transaction_id}/runs/{run_id}/steps/{step_id}")
-        @app.get("/runs/{run_id}/steps/{step_id}")
-        async def get_run_step_by_id(step_id: str, run_id: str, transaction_id: str = ''):
-            try:
-                if transaction_id:
-                    self.validate_uuid4(transaction_id)
-                self.validate_uuid4(step_id)
-                self.validate_uuid4(run_id)
-
-                step = ORM.Step_Run.select().where(ORM.Step_Run.steprunid == step_id)[0]
-                if not step:
-                    return JSONResponse(content={'error': 'Step not found!'}, status_code=404)
-
-                result_step = ORM.BaseModel.extract_data_from_select_dict(step.__dict__)
-                return JSONResponse(content={'step_runs': [self.json_reserialize(result_step)]})
-
-            except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting step: {e}'}, status_code=500)
+                return JSONResponse(content={'error': f'Error while getting step run by id: {e}'}, status_code=500)

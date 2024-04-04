@@ -14,7 +14,7 @@ class APICore:
         def default(self, obj):
             if isinstance(obj, UUID) or isinstance(obj, datetime.datetime) or isinstance(obj, datetime.date):
                 return str(obj)
-            return json.JSONEncoder.default(self, obj)\
+            return json.JSONEncoder.default(self, obj)
 
     @classmethod
     def json_reserialize(cls, obj):

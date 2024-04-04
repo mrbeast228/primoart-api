@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from fastapi import Body
 from starlette.responses import JSONResponse
@@ -18,7 +19,7 @@ class POST(APICore):
                                                                              "city": "New York",
                                                                              "latitude": 40.7128,
                                                                              "longitude": -74.0060,
-                                                                             "createddatetime": "2024-02-10 03:12:00.841588+00:00",
+                                                                             "createddatetime": "2024-02-10 03:12:00.841588",
                                                                              "createdby": "Admin"}]
                                                                      })):
                 try:
@@ -26,11 +27,18 @@ class POST(APICore):
                         return JSONResponse(content={'error': 'Invalid robots format!'}, status_code=400)
                     real_robots = robot_data['robots']
 
-                    # generate UUID for each robot
+                    # generate UUID for each robot and reparse datetime fields to Peewee compatible format 'YYYY-MM-DD HH:MM:SS.SSSSSS'
                     uuids = []
                     for robot in real_robots:
                         robot['robotid'] = uuid.uuid4()
                         uuids.append(robot['robotid'])
+
+                        try:
+                            extracted_datetime = self.str_to_datetime(robot['createddatetime'])
+                            robot['createddatetime'] = datetime.strftime(extracted_datetime, '%Y-%m-%d %H:%M:%S.%f')
+                        except Exception:
+                            # use now() if datetime is invalid
+                            robot['createddatetime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
                     ORM.Robots.insert_many(real_robots).execute()
                     return JSONResponse(content={'message': f"Robot(s) created successfully!", 'ids': self.json_reserialize(uuids)})
@@ -42,7 +50,7 @@ class POST(APICore):
         async def create_process(process_data: dict = Body(..., example={"processes":
                                                                             [{"name": "process-1",
                                                                                 "description": "process for testing",
-                                                                                "createddatetime": "2024-02-10 03:12:00.841588+00:00",
+                                                                                "createddatetime": "2024-02-10 03:12:00.841588",
                                                                                 "createdby": "Admin"}]
                                                                          })):
                 try:
@@ -56,6 +64,12 @@ class POST(APICore):
                         process['processid'] = uuid.uuid4()
                         uuids.append(process['processid'])
 
+                        try:
+                            extracted_datetime = self.str_to_datetime(process['createddatetime'])
+                            process['createddatetime'] = datetime.strftime(extracted_datetime, '%Y-%m-%d %H:%M:%S.%f')
+                        except Exception:
+                            process['createddatetime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+
                     ORM.Process.insert_many(real_processes).execute()
                     return JSONResponse(content={'message': f"Process(es) created successfully!", 'ids': self.json_reserialize(uuids)})
 
@@ -67,7 +81,7 @@ class POST(APICore):
                                                                                        [{"processid": "ffffffff-5e33-4d88-9ae8-1aa7aa556066",
                                                                                          "name": "bp-1",
                                                                                          "description": "Service for testing",
-                                                                                         "createddatetime": "2024-02-10 03:12:00.841588+00:00",
+                                                                                         "createddatetime": "2024-02-10 03:12:00.841588",
                                                                                          "createdby": "Admin"}]
                                                                                    })):
             try:
@@ -81,6 +95,12 @@ class POST(APICore):
                     service['serviceid'] = uuid.uuid4()
                     uuids.append(service['serviceid'])
 
+                    try:
+                        extracted_datetime = self.str_to_datetime(service['createddatetime'])
+                        service['createddatetime'] = datetime.strftime(extracted_datetime, '%Y-%m-%d %H:%M:%S.%f')
+                    except Exception:
+                        service['createddatetime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+
                 ORM.Service.insert_many(real_services).execute()
                 return JSONResponse(content={'message': f"Service(s) created successfully!", 'ids': self.json_reserialize(uuids)})
 
@@ -92,7 +112,7 @@ class POST(APICore):
                                                                                      [{"serviceid": "fd2fffef-da62-4fff-8d46-c7d6baf80eb3",
                                                                                           "name": "tr-morning-faithful",
                                                                                           "description": "An awesome transaction tr-morning-faithful executed by robot robot-windows",
-                                                                                          "createddatetime": "2024-02-10 03:12:00.841588+00:00",
+                                                                                          "createddatetime": "2024-02-10 03:12:00.841588",
                                                                                           "createdby": "Admin",
                                                                                           "state": "INACTIVE"}]
                                                                                  })):
@@ -108,6 +128,12 @@ class POST(APICore):
                     transaction['transactionid'] = uuid.uuid4()
                     uuids.append(transaction['transactionid'])
 
+                    try:
+                        extracted_datetime = self.str_to_datetime(transaction['createddatetime'])
+                        transaction['createddatetime'] = datetime.strftime(extracted_datetime, '%Y-%m-%d %H:%M:%S.%f')
+                    except Exception:
+                        transaction['createddatetime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+
                 ORM.Transaction.insert_many(real_trans).execute()
                 return JSONResponse(content={'message': f"Transaction(s) created successfully!", 'ids': self.json_reserialize(uuids)})
 
@@ -119,7 +145,7 @@ class POST(APICore):
                                                          [{"transactionid": "ffffffef-da62-4fed-8d46-c7d6baf80eb3",
                                                            "name": "step-assistant",
                                                            "description": "An step to do transition and tulip",
-                                                           "createddatetime": "2024-02-10 03:12:00.872079+00:00",
+                                                           "createddatetime": "2024-02-10 03:12:00.872079",
                                                            "createdby": "Admin"}]
                                                      })):
             try:
@@ -132,6 +158,12 @@ class POST(APICore):
                 for step in step_data['steps']:
                     step['stepid'] = uuid.uuid4()
                     uuids.append(step['stepid'])
+
+                    try:
+                        extracted_datetime = self.str_to_datetime(step['createddatetime'])
+                        step['createddatetime'] = datetime.strftime(extracted_datetime, '%Y-%m-%d %H:%M:%S.%f')
+                    except Exception:
+                        step['createddatetime'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
                 ORM.Step_Info.insert_many(step_data['steps']).execute()
                 return JSONResponse(content={'message': f"Step(s) added successfully!", 'ids': self.json_reserialize(uuids)})
@@ -172,6 +204,12 @@ class POST(APICore):
                     run['transactionrunid'] = uuid.uuid4()
                     uuids.append(run['transactionrunid'])
 
+                    try:
+                        extracted_runstart = self.str_to_datetime(run['runstart'])
+                        run['runstart'] = datetime.strftime(extracted_runstart, '%Y-%m-%d %H:%M:%S.%f')
+                    except Exception:
+                        run['runstart'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+
                     if not 'step_runs' in run or not isinstance(run['step_runs'], list):
                         raise ValueError('Invalid step runs format!')
 
@@ -183,6 +221,20 @@ class POST(APICore):
                     for step_run in current_step_runs:
                         step_run['steprunid'] = uuid.uuid4()
                         step_run['transactionrunid'] = run['transactionrunid']
+
+                        for field in 'runstart', 'runend':
+                            try:
+                                extracted_field = self.str_to_datetime(step_run[field])
+                                step_run[field] = datetime.strftime(extracted_field, '%Y-%m-%d %H:%M:%S.%f')
+                            except Exception:
+                                step_run[field] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+
+                    try:
+                        extracted_runend = self.str_to_datetime(run['runend'])
+                        run['runend'] = datetime.strftime(extracted_runend, '%Y-%m-%d %H:%M:%S.%f')
+                    except Exception:
+                        run['runend'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+
                     step_runs.extend(current_step_runs)
 
                 ORM.Transaction_Run.insert_many(runs_data['runs']).execute()

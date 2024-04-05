@@ -9,7 +9,7 @@ class DELETE(APICore):
     def __init__(self):
         super().__init__()
 
-        @app.delete("/robots/<robot_id>", tags=['Remove data'])
+        @app.delete("/robots/{robot_id}", tags=['Remove data'])
         async def delete_robot(robot_id: str):
             try:
                 self.validate_uuid4(robot_id)
@@ -19,7 +19,7 @@ class DELETE(APICore):
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while deleting robot {robot_id}: {e}'}, status_code=500)
 
-        @app.delete("/processes/<process_id>", tags=['Remove data'])
+        @app.delete("/processes/{process_id}", tags=['Remove data'])
         async def delete_process(process_id: str):
             try:
                 self.validate_uuid4(process_id)
@@ -29,7 +29,7 @@ class DELETE(APICore):
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while deleting process {process_id}: {e}'}, status_code=500)
 
-        @app.delete("/services/<service_id>", tags=['Remove data'])
+        @app.delete("/services/{service_id}", tags=['Remove data'])
         async def delete_service(service_id: str):
             try:
                 self.validate_uuid4(service_id)
@@ -39,7 +39,7 @@ class DELETE(APICore):
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while deleting service {service_id}: {e}'}, status_code=500)
 
-        @app.delete("/transactions/<transaction_id>", tags=['Remove data'])
+        @app.delete("/transactions/{transaction_id}", tags=['Remove data'])
         async def delete_transaction(transaction_id: str):
             try:
                 self.validate_uuid4(transaction_id)
@@ -49,7 +49,7 @@ class DELETE(APICore):
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while deleting transaction {transaction_id}: {e}'}, status_code=500)
 
-        @app.delete("/steps/<step_id>", tags=['Remove data'])
+        @app.delete("/steps/{step_id}", tags=['Remove data'])
         async def delete_step(step_id: str):
             try:
                 self.validate_uuid4(step_id)
@@ -59,7 +59,7 @@ class DELETE(APICore):
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while deleting step {step_id}: {e}'}, status_code=500)
 
-        @app.delete("/runs/<run_id>", tags=['Remove data'])
+        @app.delete("/runs/{run_id}", tags=['Remove data'])
         async def delete_run(run_id: str):
             try:
                 self.validate_uuid4(run_id)

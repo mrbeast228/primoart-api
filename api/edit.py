@@ -102,7 +102,7 @@ class PUT(APICore):
                 except Exception as e:
                  return JSONResponse(content={'error': f'Error while updating transaction: {e}'}, status_code=500)
 
-        @app.put("/steps/<step_id>", tags=['Edit data'])
+        @app.put("/steps/{step_id}", tags=['Edit data'])
         async def update_step(step_id: str, step_patch: dict = Body(..., example={"step_patch":
                                                                                             {"name": "TEST PATCH"}
                                                                                                              })):
@@ -125,7 +125,7 @@ class PUT(APICore):
                 except Exception as e:
                  return JSONResponse(content={'error': f'Error while updating step: {e}'}, status_code=500)
 
-        @app.put("/runs/<run_id>", tags=['Edit data'])
+        @app.put("/runs/{run_id}", tags=['Edit data'])
         async def update_run(run_id: str, run_patch: dict = Body(..., example={"run_patch":
                                                                                             {"name": "TEST PATCH"}
                                                                                                              })):
@@ -148,7 +148,7 @@ class PUT(APICore):
                 except Exception as e:
                  return JSONResponse(content={'error': f'Error while updating run: {e}'}, status_code=500)
 
-        @app.put("/step_runs/<step_run_id>", tags=['Edit data'])
+        @app.put("/step_runs/{step_run_id}", tags=['Edit data'])
         async def update_step_run(step_run_id: str, step_run_patch: dict = Body(..., example={"step_run_patch":
                                                                                             {"name": "TEST PATCH"}
                                                                                                              })):

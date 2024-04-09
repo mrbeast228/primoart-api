@@ -5,7 +5,11 @@
 Схема данных - https://wiki.yandex.ru/homepage/mon/internal/active/primoart
 
 ## Документация
-Упакована в Swagger Docs (TODO добавить примеры response на SDR)
+Упакована в Swagger Docs с примерами для статических списков
+
+Для SDR (единичные элементы с динамическими данными) - тело запроса GET должно содержать `start` и `end` строки конвертируемые в datetime. Примеры результатов - TODO
+
+Для `/runs/heatmap` также требуется фильтр `serviceid` или `processid`
 
 ## Использование
 ```shell

@@ -6,6 +6,7 @@ from api.add import POST
 from api.edit import PUT
 from api.sdr import SingleGET
 from api.read import MultiGET
+from api.heatmap import MatrixGET
 from api.remove import DELETE
 from api.files import Files
 
@@ -33,6 +34,7 @@ class API(APICore):
 
     def implement_methods(self):
         # constructors of classes adding decorated functions for FastAPI
+        MatrixGET() # must be before single get!
         SingleGET()
         MultiGET()
         POST()

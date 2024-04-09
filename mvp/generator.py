@@ -1,9 +1,5 @@
-import os
-import uuid
 import requests
-import datetime
 import random
-from pathlib import Path
 
 import mvp.fake_classes as mvp
 from api.core import APICore
@@ -17,59 +13,6 @@ class Filler:
     fake_transaction_list = []
     fake_transaction_step_list = []
     current_logs = []
-
-    @staticmethod
-    def genScreenshot(status):
-        path = (Path(__file__).parent / 'assets' / 'screenshots' / status).resolve()
-        file = open(path / random.choice(os.listdir(path)), 'rb')
-
-        try:
-            url = f'http://{config.api_endpoint}:{config.api_port}/screenshots'
-            files = {'file': file}
-            response = requests.post(url, files=files)
-            file.close()
-            if response.status_code != 200:
-                raise ConnectionError(f'API Error: {response.status_code} {response.text}')
-            return response.json()['screenshot_id']
-
-        except Exception as e:
-            print(f'Error while adding screenshot: {e}')
-            exit(1)
-
-    def genLog(self):
-        log = '\n'.join(
-            [f'[{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")}]'
-             f'{mvp.fake.sentence(nb_words=10, variable_nb_words=True)}'
-             for i in range(random.randint(20, 50))]
-        )
-        bytes = log.encode('utf-8')
-        self.current_logs.append(log)
-
-        try:
-            url = f'http://{config.api_endpoint}:{config.api_port}/logs'
-            response = requests.post(url, files={'file': bytes})
-            if response.status_code != 200:
-                raise ConnectionError(f'API Error: {response.status_code} {response.text}')
-            return response.json()['log_id']
-
-        except Exception as e:
-            print(f'Error while adding log: {e}')
-            exit(1)
-
-    def concatLogs(self):
-        result_log = '\n\n'.join(self.current_logs)
-        try:
-            url = f'http://{config.api_endpoint}:{config.api_port}/logs'
-            response = requests.post(url, files={'file': result_log.encode('utf-8')})
-            if response.status_code != 200:
-                raise ConnectionError(f'API Error: {response.status_code} {response.text}')
-
-            self.current_logs.clear()
-            return response.json()['log_id']
-
-        except Exception as e:
-            print(f'Error while adding log: {e}')
-            exit(1)
 
     def genNewRobots(self, cnt=10):
         new_fake_robots = [mvp.FakeRobot().__dict__ for i in range(random.randint(cnt // 2, cnt))]
@@ -286,19 +229,11 @@ class Filler:
                     if fake_transaction_step['transactionid'] == fake_transaction['transactionid']:
                         fake_transaction_step_run = mvp.FakeStepRun(fake_transaction_step['stepid']).__dict__
 
-                        # logs and screenshots
-                        fake_transaction_step_run['logid'] = self.genLog() if config.mvp_create_artifacts else str(
-                            uuid.uuid4())
-                        fake_transaction_step_run['screenshotid'] = self.genScreenshot(
-                            fake_transaction_step_run['runresult']) if config.mvp_create_artifacts else str(
-                            uuid.uuid4())
-
                         fake_transaction_run['step_runs'].append(fake_transaction_step_run)
                         if fake_transaction_step_run['runresult'] != "OK":  # logical and
                             fake_transaction_run["runresult"] = fake_transaction_step_run['runresult']
 
                 # work on logs
-                fake_transaction_run['logid'] = self.concatLogs() if config.mvp_create_artifacts else str(uuid.uuid4())
                 runs.append(fake_transaction_run)
 
         try:

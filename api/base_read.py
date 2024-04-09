@@ -51,8 +51,9 @@ class BaseGET(APICore):
         else:
             raise TypeError('Invalid type for IDs list')
 
-        for r in result:
-            result[r] = getattr(ORM, table).select()\
+        for r in result: # avoid selecting too many data
+            result[r] = getattr(ORM, table)\
+                .select(getattr(getattr(ORM, table), idtype))\
                 .where(getattr(getattr(ORM, table), idtype) << lst)\
                 .where(getattr(ORM, table).runresult == r.upper())\
                 .where(getattr(ORM, table).runstart >= start)\

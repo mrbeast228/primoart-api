@@ -87,6 +87,8 @@ class FakeTransactionRun():
 		self.robotid = robotid
 		self.runstart = fake.date_time_this_year()
 		self.runend = self.runstart + datetime.timedelta(milliseconds=random.randint(15000, 40000))
+		self.log = "BASE64 ENCODED STRING"
+		self.screenshot = "BASE64 ENCODED STRING"
 
 	def get_random_word(self):
 		r = wonderwords.RandomWord()

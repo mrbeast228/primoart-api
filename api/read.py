@@ -158,6 +158,10 @@ class MultiGET(BaseGET):
         })):
             try:
                 subresult = self.get_base_data(ORM.Transaction_Run, filter_body)
+                # remove 'log' and 'screenshots' fields due to they're very big base64 strings
+                for i in range(len(subresult)):
+                    subresult[i].pop('log', None)
+                    subresult[i].pop('screenshot', None)
                 return JSONResponse(content={'runs': self.json_reserialize(subresult)})
 
             except Exception as e:

@@ -180,7 +180,8 @@ class POST(APICore):
                                                            "runend": "2024-02-14 17:29:28.542531",
                                                            "runresult": "OK",
                                                            "errorcode": 0,
-                                                           "logid": "e27383c7-9473-454e-8bf0-c985c64cee42",
+                                                           "log": "BASE64 ENCODED STRING",
+                                                           "screenshot": "BASE64 ENCODED STRING",
                                                            "step_runs": [{
                                                                "stepid": "ffffffff-e707-4855-80cb-172ee4f2bfd8",
                                                                "runstart": "2024-02-14 17:29:28.198543",

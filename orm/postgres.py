@@ -87,7 +87,8 @@ class Transaction_Run(BaseModel):
     runstart = peewee.DateTimeField()
     runend = peewee.DateTimeField(null=True)
     runresult = peewee.CharField(max_length=1000, null=True)
-    logid = peewee.UUIDField(null=True)
+    log = peewee.TextField(null=True) # base64 encoded
+    screenshot = peewee.TextField(null=True) # base64 encoded
     errorcode = peewee.IntegerField(null=True)
 
     class Meta:
@@ -113,8 +114,6 @@ class Step_Run(BaseModel):
     runstart = peewee.DateTimeField()
     runend = peewee.DateTimeField()
     runresult = peewee.CharField(max_length=1000)
-    logid = peewee.UUIDField()
-    screenshotid = peewee.UUIDField()
     errorcode = peewee.IntegerField()
 
     class Meta:

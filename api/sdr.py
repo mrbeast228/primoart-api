@@ -247,6 +247,9 @@ class SingleGET(BaseGET):
                 self.validate_uuid4(run_id)
                 run = ORM.Transaction_Run.get(ORM.Transaction_Run.transactionrunid == run_id)
                 subresult = ORM.BaseModel.extract_data_from_select_dict(run.__dict__)
+                # remove base64 encoded log and screenshot
+                subresult.pop('log', None)
+                subresult.pop('screenshot', None)
 
                 # step 1 - get coefficients from method
                 runs_data = self.get_runs_for_list([run.transactionid], start_date, end_date)

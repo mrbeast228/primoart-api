@@ -1,4 +1,3 @@
-import uuid
 import filetype
 from pathlib import Path
 
@@ -7,6 +6,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from api.core import APICore, app
 from orm.config import config
+import orm.postgres as ORM
 
 class Files(APICore):
     def __init__(self):
@@ -15,58 +15,31 @@ class Files(APICore):
         self.logs_dir = Path(__file__).parent / '..' / config.logs_dir
         self.screenshots_dir = Path(__file__).parent / '..' / config.screenshots_dir
 
-        @app.get("/logs/{log_id}", tags=['Receive files'])
-        async def get_log(log_id: str):
+        @app.get("/logs/{transaction_run_id}", tags=['Receive files'])
+        async def get_log(transaction_run_id: str):
             try:
-                self.validate_uuid4(log_id)
+                self.validate_uuid4(transaction_run_id)
 
-                log_path = self.logs_dir / f'{log_id}.log'
-                if not log_path.exists():
-                    return JSONResponse(content={'error': f'Log {log_id} not found!'}, status_code=404)
-
-                return FileResponse(log_path.resolve())
+                log_base64 = ORM.Transaction_Run.select(ORM.Transaction_Run.log)\
+                    .where(ORM.Transaction_Run.transactionrunid == transaction_run_id).scalar()
+                if not log_base64:
+                    return JSONResponse(content={'error': f'Log of transaction run {transaction_run_id} not found!'}, status_code=404)
+                return JSONResponse(content={'base64': log_base64}) # TODO: implement auto-decoding and uploading a real file
 
             except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting log {log_id}: {e}'}, status_code=500)
+                return JSONResponse(content={'error': f'Error while getting log {transaction_run_id}: {e}'}, status_code=500)
 
-        # get log file from POST
-        @app.post("/logs", tags=['Upload files'])
-        async def create_log(file: bytes = File(...)):
+        @app.get("/screenshots/{transaction_run_id}", tags=['Receive files'])
+        async def get_screenshot(transaction_run_id: str):
             try:
-                log_id = str(uuid.uuid4())
-                log_path = (self.logs_dir / f'{log_id}.log').resolve()
+                self.validate_uuid4(transaction_run_id)
 
-                with open(log_path, 'wb') as buffer:
-                    buffer.write(file)
-                return JSONResponse(content={'message': f'Log created successfully!', 'log_id': log_id})
+                screenshot_base64 = ORM.Transaction_Run.select(ORM.Transaction_Run.screenshot)\
+                    .where(ORM.Transaction_Run.transactionrunid == transaction_run_id).scalar()
+                if not screenshot_base64:
+                    return JSONResponse(content={'error': f'Screenshot of transaction run {transaction_run_id} not found!'}, status_code=404)
+                return JSONResponse(content={'base64': screenshot_base64}) # TODO: implement auto-decoding and uploading a real file
+                #return FileResponse(screenshot_path.resolve(), media_type=filetype.guess(screenshot_path).mime)
 
             except Exception as e:
-                return JSONResponse(content={'error': f'Error while creating log: {e}'}, status_code=500)
-
-        @app.get("/screenshots/{screenshot_id}", tags=['Receive files'])
-        async def get_screenshot(screenshot_id: str):
-            try:
-                self.validate_uuid4(screenshot_id)
-
-                screenshot_path = self.screenshots_dir / screenshot_id
-                if not screenshot_path.exists():
-                    return JSONResponse(content={'error': f'Screenshot {screenshot_id} not found!'}, status_code=404)
-
-                return FileResponse(screenshot_path.resolve(), media_type=filetype.guess(screenshot_path).mime)
-
-            except Exception as e:
-                return JSONResponse(content={'error': f'Error while getting screenshot {screenshot_id}: {e}'}, status_code=500)
-
-        # get screenshot file from POST
-        @app.post("/screenshots", tags=['Upload files'])
-        async def create_screenshot(file: UploadFile = File(...)):
-            try:
-                screenshot_id = str(uuid.uuid4())
-                screenshot_path = (self.screenshots_dir / screenshot_id).resolve()
-
-                with open(screenshot_path, 'wb') as buffer:
-                    buffer.write(await file.read())
-                return JSONResponse(content={'message': f'Screenshot created successfully!', 'screenshot_id': screenshot_id})
-
-            except Exception as e:
-                return JSONResponse(content={'error': f'Error while creating screenshot: {e}'}, status_code=500)
+                return JSONResponse(content={'error': f'Error while getting screenshot {transaction_run_id}: {e}'}, status_code=500)

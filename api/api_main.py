@@ -41,4 +41,5 @@ class API(APICore):
     def run(self):
         uvicorn.run(app, host=config.api_endpoint, port=config.api_port)
 
-API().run()
+if __name__ == '__main__':
+    API().run()

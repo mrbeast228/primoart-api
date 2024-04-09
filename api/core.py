@@ -55,11 +55,11 @@ class APICore:
             raise ValueError('Invalid operator!')
 
     @staticmethod
-    def str_to_datetime(date_string):
+    def str_to_datetime(date_string, default=None):
         try:
             return parser.parse(date_string)
         except Exception:
-            return None
+            return default
 
     @staticmethod
     def extract_page(select, page, per_page):

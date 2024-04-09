@@ -1,6 +1,9 @@
+import datetime
+
 from fastapi import Body
 from starlette.responses import JSONResponse
 
+from peewee import fn
 import orm.postgres as ORM # for now only Postgres is supported
 
 from api.core import APICore, app
@@ -38,6 +41,45 @@ class GET(APICore):
 
         return self.extract_page(rows, page, per_page)
 
+    @staticmethod
+    def get_runs_for_list(trans_ids, start, end):
+        result = {'ok': 0, 'warning': 0, 'fail': 0}
+        for r in result:
+            result[r] = ORM.Transaction_Run.select()\
+                .where(ORM.Transaction_Run.transactionid << trans_ids)\
+                .where(ORM.Transaction_Run.runresult == r.upper())\
+                .where(ORM.Transaction_Run.runstart >= start)\
+                .where(ORM.Transaction_Run.runend <= end)\
+            .count()
+
+        # count average 'runend - runstart'
+        result['avg'] = ORM.Transaction_Run.select(
+            fn.AVG(ORM.Transaction_Run.runend - ORM.Transaction_Run.runstart))\
+            .where(ORM.Transaction_Run.transactionid << trans_ids)\
+            .where(ORM.Transaction_Run.runstart >= start)\
+            .where(ORM.Transaction_Run.runend <= end).scalar().total_seconds()
+
+        result['total'] = result['ok'] + result['warning'] + result['fail']
+        result['sla'] = (result['ok'] / result['total']) * 100 if result['total'] else 0
+        return result
+
+    def date_logic(self, filter_body):
+        now = datetime.datetime.now()
+        backmon = now - datetime.timedelta(days=now.weekday())
+        monday = datetime.datetime(backmon.year, backmon.month, backmon.day, 0, 0, 0)
+
+        midnight = datetime.datetime(now.year, now.month, now.day, 0, 0, 0)  # of current day
+        start_date = self.str_to_datetime(filter_body.pop('start', None), monday)
+        end_date = self.str_to_datetime(filter_body.pop('end', None), now)
+
+        if start_date == monday and end_date == midnight:
+            diff = datetime.timedelta(days=7)
+        else:
+            diff = end_date - start_date
+        prev_start = start_date - diff
+
+        return now, monday, midnight, start_date, end_date, prev_start
+
     def __init__(self):
         super().__init__()
 
@@ -61,9 +103,7 @@ class GET(APICore):
             }
         })):
             try:
-                # pop needed keys from filter body for dynamic postprocessing
                 subresult = self.get_base_data(ORM.Robots, filter_body)
-                # run dynamic postprocessing here TODO
                 return JSONResponse(content={'robots': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -96,20 +136,72 @@ class GET(APICore):
             }
         })):
             try:
-                # pop needed keys from filter body for dynamic postprocessing
                 subresult = self.get_base_data(ORM.Process, filter_body)
-                # run dynamic postprocessing here TODO
                 return JSONResponse(content={'processes': self.json_reserialize(subresult)})
 
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while getting processes: {e}'}, status_code=500)
 
         @app.get("/processes/{process_id}", tags=['Read data'])
-        async def get_process_by_id(process_id: str):
+        async def get_process_by_id(process_id: str, filter_body: dict = Body({})):
             try:
+                # extract start and end from filter_body
+                now, monday, midnight, start_date, end_date, prev_start =\
+                    self.date_logic(filter_body)
+
                 self.validate_uuid4(process_id)
                 process = ORM.Process.get(ORM.Process.processid == process_id)
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(process.__dict__)]
+                subresult = ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
+
+                # dynamic postprocess values
+                # step 0 - prepare variables in subresult
+                subresult['services'] = {}
+                subresult['fail_cur'] = 0
+                subresult['sla_cur'] = 0
+                subresult['sla_prev'] = 0
+                subresult['sla_daily'] = 0
+                subresult['trans_daily'] = {}
+
+                # step 1 - get list of services for process
+                services = ORM.Service.select()\
+                    .where(ORM.Service.processid == process_id)
+                service_ids = {str(service.serviceid): {} for service in services}
+
+                global_trans_ids = []
+                for service_id in service_ids:
+                    # step 2 - get list of transactions for each service
+                    transactions = ORM.Transaction.select(ORM.Transaction.transactionid)\
+                        .where(ORM.Transaction.serviceid == service_id)
+                    transaction_ids = [str(transaction.transactionid) for transaction in transactions]
+                    global_trans_ids.extend(transaction_ids)
+
+                    # step 3 - select OK, WARNING, FAIL only for current date range
+                    runs = self.get_runs_for_list(transaction_ids, start_date, end_date)
+                    service_ids[service_id] |= runs # update dict with runs
+                    service_ids[service_id]['sla'] = (runs['ok'] / runs['total']) * 100 if runs['total'] else 0
+
+                # step 4 - sort services by ascending SLA
+                subresult['services'] = dict(sorted(service_ids.items(), key=lambda x: x[1]['sla']))
+
+                # step 5 - get SLA for current, prev and daily
+                runs_cur = self.get_runs_for_list(global_trans_ids, start_date, end_date)
+                subresult['fail_cur'] = runs_cur['fail']
+                subresult['sla_cur'] = runs_cur['sla']
+
+                runs_prev = self.get_runs_for_list(global_trans_ids, prev_start, start_date)
+                subresult['sla_prev'] = (runs_prev['ok'] / runs_prev['total']) * 100 if runs_prev['total'] else 0
+
+                runs_daily = self.get_runs_for_list(global_trans_ids, midnight, now)
+                subresult['sla_daily'] = (runs_daily['ok'] / runs_daily['total']) * 100 if runs_daily['total'] else 0
+
+                # step 6 - run day-by-day starting from start_date with time dropped to 00:00:00
+                day = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+                one_day_diff = datetime.timedelta(days=1)
+                while day < end_date:
+                    runs = self.get_runs_for_list(global_trans_ids, day, day + one_day_diff)
+                    subresult['trans_daily'][day.strftime('%Y-%m-%d')] = runs
+                    day += one_day_diff
+
                 return JSONResponse(content={'process': self.json_reserialize(subresult)})
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while getting process by id: {e}'}, status_code=500)
@@ -134,9 +226,7 @@ class GET(APICore):
             }
         })):
             try:
-                # pop needed keys from filter body for dynamic postprocessing
                 subresult = self.get_base_data(ORM.Service, filter_body)
-                # run dynamic postprocessing here TODO
                 return JSONResponse(content={'services': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -168,9 +258,7 @@ class GET(APICore):
             }
         })):
             try:
-                # pop needed keys from filter body for dynamic postprocessing
                 subresult = self.get_base_data(ORM.Transaction, filter_body)
-                # run dynamic postprocessing here TODO
                 return JSONResponse(content={'transactions': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -203,9 +291,7 @@ class GET(APICore):
             }
         })):
             try:
-                # pop needed keys from filter body for dynamic postprocessing
                 subresult = self.get_base_data(ORM.Step_Info, filter_body)
-                # run dynamic postprocessing here TODO
                 return JSONResponse(content={'steps': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -239,9 +325,7 @@ class GET(APICore):
             }
         })):
             try:
-                # pop needed keys from filter body for dynamic postprocessing
                 subresult = self.get_base_data(ORM.Transaction_Run, filter_body)
-                # run dynamic postprocessing here TODO
                 return JSONResponse(content={'runs': self.json_reserialize(subresult)})
 
             except Exception as e:
@@ -279,9 +363,7 @@ class GET(APICore):
                 }
             })):
             try:
-                # pop needed keys from filter body for dynamic postprocessing
                 subresult = self.get_base_data(ORM.Step_Run, filter_body)
-                # run dynamic postprocessing here TODO
                 return JSONResponse(content={'step_runs': self.json_reserialize(subresult)})
 
             except Exception as e:

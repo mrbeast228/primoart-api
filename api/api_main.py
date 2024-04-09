@@ -4,7 +4,8 @@ from starlette.middleware.cors import CORSMiddleware
 from api.core import app, APICore
 from api.add import POST
 from api.edit import PUT
-from api.read import GET
+from api.sdr import SingleGET
+from api.read import MultiGET
 from api.remove import DELETE
 from api.files import Files
 
@@ -32,7 +33,8 @@ class API(APICore):
 
     def implement_methods(self):
         # constructors of classes adding decorated functions for FastAPI
-        GET()
+        SingleGET()
+        MultiGET()
         POST()
         PUT()
         DELETE()

@@ -238,12 +238,33 @@ class SingleGET(BaseGET):
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while getting transaction by id: {e}'}, status_code=500)
 
-        @app.get("/runs/{run_id}", tags=['Read data'])
-        async def get_run_by_id(run_id: str):
+        @app.get("/runs/{run_id}", tags=['Read dynamic data'])
+        async def get_run_by_id(run_id: str, filter_body: dict = Body({})):
             try:
+                now, monday, midnight, start_date, end_date, prev_start =\
+                    self.date_logic(filter_body)
+
                 self.validate_uuid4(run_id)
                 run = ORM.Transaction_Run.get(ORM.Transaction_Run.transactionrunid == run_id)
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(run.__dict__)]
+                subresult = ORM.BaseModel.extract_data_from_select_dict(run.__dict__)
+
+                # step 1 - get coefficients from method
+                runs_data = self.get_runs_for_list([run.transactionid], start_date, end_date)
+                subresult |= runs_data
+
+                # step 2 - get all robots running current transaction
+                runs = ORM.Transaction_Run.select()\
+                    .where(ORM.Transaction_Run.transactionid == run.transactionid)
+                robot_ids = {str(run.robotid): {} for run in runs}
+
+                # step 3 - get runs for all robots via method and count SLA
+                for rid in robot_ids:
+                    rns = self.get_runs_for_list([rid], start_date, end_date, idtype='robotid')
+                    robot_ids[rid] |= rns
+
+                # step 4 - sort robots by ascending SLA
+                subresult['robots'] = dict(sorted(robot_ids.items(), key=lambda x: x[1]['sla']))
+
                 return JSONResponse(content={'run': self.json_reserialize(subresult)})
 
             except Exception as e:

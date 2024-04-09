@@ -44,20 +44,30 @@ class GET(APICore):
     @staticmethod
     def get_runs_for_list(trans_ids, start, end):
         result = {'ok': 0, 'warning': 0, 'fail': 0}
+        if isinstance(trans_ids, dict):
+            lst = list(trans_ids.keys())
+        elif isinstance(trans_ids, list):
+            lst = trans_ids
+        else:
+            raise TypeError('Invalid type for transaction IDs list')
+
         for r in result:
             result[r] = ORM.Transaction_Run.select()\
-                .where(ORM.Transaction_Run.transactionid << trans_ids)\
+                .where(ORM.Transaction_Run.transactionid << lst)\
                 .where(ORM.Transaction_Run.runresult == r.upper())\
                 .where(ORM.Transaction_Run.runstart >= start)\
                 .where(ORM.Transaction_Run.runend <= end)\
             .count()
 
         # count average 'runend - runstart'
-        result['avg'] = ORM.Transaction_Run.select(
-            fn.AVG(ORM.Transaction_Run.runend - ORM.Transaction_Run.runstart))\
-            .where(ORM.Transaction_Run.transactionid << trans_ids)\
-            .where(ORM.Transaction_Run.runstart >= start)\
-            .where(ORM.Transaction_Run.runend <= end).scalar().total_seconds()
+        try:
+            result['avg'] = ORM.Transaction_Run.select(
+                fn.AVG(ORM.Transaction_Run.runend - ORM.Transaction_Run.runstart))\
+                .where(ORM.Transaction_Run.transactionid << lst)\
+                .where(ORM.Transaction_Run.runstart >= start)\
+                .where(ORM.Transaction_Run.runend <= end).scalar().total_seconds()
+        except AttributeError: # no runs on required range
+            result['avg'] = 0
 
         result['total'] = result['ok'] + result['warning'] + result['fail']
         result['sla'] = (result['ok'] / result['total']) * 100 if result['total'] else 0
@@ -145,7 +155,6 @@ class GET(APICore):
         @app.get("/processes/{process_id}", tags=['Read data'])
         async def get_process_by_id(process_id: str, filter_body: dict = Body({})):
             try:
-                # extract start and end from filter_body
                 now, monday, midnight, start_date, end_date, prev_start =\
                     self.date_logic(filter_body)
 
@@ -153,13 +162,7 @@ class GET(APICore):
                 process = ORM.Process.get(ORM.Process.processid == process_id)
                 subresult = ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
 
-                # dynamic postprocess values
                 # step 0 - prepare variables in subresult
-                subresult['services'] = {}
-                subresult['fail_cur'] = 0
-                subresult['sla_cur'] = 0
-                subresult['sla_prev'] = 0
-                subresult['sla_daily'] = 0
                 subresult['trans_daily'] = {}
 
                 # step 1 - get list of services for process
@@ -178,7 +181,6 @@ class GET(APICore):
                     # step 3 - select OK, WARNING, FAIL only for current date range
                     runs = self.get_runs_for_list(transaction_ids, start_date, end_date)
                     service_ids[service_id] |= runs # update dict with runs
-                    service_ids[service_id]['sla'] = (runs['ok'] / runs['total']) * 100 if runs['total'] else 0
 
                 # step 4 - sort services by ascending SLA
                 subresult['services'] = dict(sorted(service_ids.items(), key=lambda x: x[1]['sla']))
@@ -189,10 +191,10 @@ class GET(APICore):
                 subresult['sla_cur'] = runs_cur['sla']
 
                 runs_prev = self.get_runs_for_list(global_trans_ids, prev_start, start_date)
-                subresult['sla_prev'] = (runs_prev['ok'] / runs_prev['total']) * 100 if runs_prev['total'] else 0
+                subresult['sla_prev'] = runs_prev['sla']
 
                 runs_daily = self.get_runs_for_list(global_trans_ids, midnight, now)
-                subresult['sla_daily'] = (runs_daily['ok'] / runs_daily['total']) * 100 if runs_daily['total'] else 0
+                subresult['sla_daily'] = runs_daily['sla']
 
                 # step 6 - run day-by-day starting from start_date with time dropped to 00:00:00
                 day = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
@@ -233,11 +235,57 @@ class GET(APICore):
                 return JSONResponse(content={'error': f'Error while getting services: {e}'}, status_code=500)
 
         @app.get("/services/{service_id}", tags=['Read data'])
-        async def get_service_by_id(service_id: str):
+        async def get_service_by_id(service_id: str, filter_body: dict = Body({})):
             try:
+                now, monday, midnight, start_date, end_date, prev_start =\
+                    self.date_logic(filter_body)
+
                 self.validate_uuid4(service_id)
                 service = ORM.Service.get(ORM.Service.serviceid == service_id)
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(service.__dict__)]
+                subresult = ORM.BaseModel.extract_data_from_select_dict(service.__dict__)
+
+                # step 1 - get list of transactions for service
+                transactions = ORM.Transaction.select(ORM.Transaction.transactionid)\
+                    .where(ORM.Transaction.serviceid == service_id)
+                transaction_ids = {str(transaction.transactionid): {} for transaction in transactions}
+
+                # step 2 - get runs for all transactions via method and count SLA
+                runs_cur = self.get_runs_for_list(transaction_ids, start_date, end_date)
+                subresult['fail_cur'] = runs_cur['fail']
+                subresult['sla_cur'] = runs_cur['sla']
+
+                runs_prev = self.get_runs_for_list(transaction_ids, prev_start, start_date)
+                subresult['sla_prev'] = runs_prev['sla']
+
+                runs_daily = self.get_runs_for_list(transaction_ids, midnight, now)
+                subresult['sla_daily'] = runs_daily['sla']
+
+                # step 3 - for each transaction check if there're any WARNING or FAIL runs
+                subresult['trans_ok'] = 0
+                subresult['trans_warning'] = 0
+                subresult['trans_fail'] = 0
+                subresult['trans_daily'] = {}
+                for tid in transaction_ids:
+                    runs = self.get_runs_for_list([tid], start_date, end_date)
+                    if runs['fail']:
+                        subresult['trans_fail'] += 1
+                    elif runs['warning']:
+                        subresult['trans_warning'] += 1
+                    else:
+                        subresult['trans_ok'] += 1
+                    transaction_ids[tid] |= runs
+
+                # step 4 - sort transactions by ascending SLA
+                subresult['transactions'] = dict(sorted(transaction_ids.items(), key=lambda x: x[1]['sla']))
+
+                # step 5 - run day-by-day starting from start_date with time dropped to 00:00:00
+                day = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+                one_day_diff = datetime.timedelta(days=1)
+                while day < end_date:
+                    runs = self.get_runs_for_list(transaction_ids, day, day + one_day_diff)
+                    subresult['trans_daily'][day.strftime('%Y-%m-%d')] = runs
+                    day += one_day_diff
+
                 return JSONResponse(content={'service': self.json_reserialize(subresult)})
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while getting service by id: {e}'}, status_code=500)

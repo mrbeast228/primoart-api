@@ -3,7 +3,7 @@ import datetime
 from fastapi import Body
 from starlette.responses import JSONResponse
 
-from peewee import fn
+from peewee import fn, SQL
 import orm.postgres as ORM # for now only Postgres is supported
 
 from api.core import APICore, app
@@ -42,7 +42,7 @@ class GET(APICore):
         return self.extract_page(rows, page, per_page)
 
     @staticmethod
-    def get_runs_for_list(ids, start, end, idtype='transactionid'):
+    def get_runs_for_list(ids, start, end, idtype='transactionid', table='Transaction_Run'):
         result = {'ok': 0, 'warning': 0, 'fail': 0}
         if isinstance(ids, dict):
             lst = list(ids.keys())
@@ -52,22 +52,23 @@ class GET(APICore):
             raise TypeError('Invalid type for IDs list')
 
         for r in result:
-            result[r] = ORM.Transaction_Run.select()\
-                .where(getattr(ORM.Transaction_Run, idtype) << lst)\
-                .where(ORM.Transaction_Run.runresult == r.upper())\
-                .where(ORM.Transaction_Run.runstart >= start)\
-                .where(ORM.Transaction_Run.runend <= end)\
+            result[r] = getattr(ORM, table).select()\
+                .where(getattr(getattr(ORM, table), idtype) << lst)\
+                .where(getattr(ORM, table).runresult == r.upper())\
+                .where(getattr(ORM, table).runstart >= start)\
+                .where(getattr(ORM, table).runend <= end)\
             .count()
 
-        # count average 'runend - runstart'
-        try:
-            result['avg'] = ORM.Transaction_Run.select(
-                fn.AVG(ORM.Transaction_Run.runend - ORM.Transaction_Run.runstart))\
-                .where(getattr(ORM.Transaction_Run, idtype) << lst)\
-                .where(ORM.Transaction_Run.runstart >= start)\
-                .where(ORM.Transaction_Run.runend <= end).scalar().total_seconds()
-        except AttributeError: # no runs on required range
-            result['avg'] = 0
+        # count avg/min/max for 'runend - runstart'
+        for func in ['avg', 'min', 'max']:
+            try:
+                result[func] = getattr(ORM, table).select(getattr(fn, func.upper())
+                    (getattr(ORM, table).runend - getattr(ORM, table).runstart))\
+                    .where(getattr(getattr(ORM, table), idtype) << lst)\
+                    .where(getattr(ORM, table).runstart >= start)\
+                    .where(getattr(ORM, table).runend <= end).scalar().total_seconds()
+            except AttributeError: # no runs on required range
+                result[func] = 0
 
         result['total'] = result['ok'] + result['warning'] + result['fail']
         result['sla'] = (result['ok'] / result['total']) * 100 if result['total'] else 0
@@ -89,6 +90,33 @@ class GET(APICore):
         prev_start = start_date - diff
 
         return now, monday, midnight, start_date, end_date, prev_start
+
+    @staticmethod
+    def runtime_filtering(id, table, min=None, max=None, table_name='Transaction_Run', idtype='robotid'):
+        min_sql = SQL(f"INTERVAL '{min} seconds'") if min else None
+        max_sql = SQL(f"INTERVAL '{max} seconds'") if max else None
+        if min_sql and max_sql:
+            rows = table.select()\
+                    .where(getattr(getattr(ORM, table_name), idtype) == id)\
+                    .where(getattr(ORM, table_name).runend - getattr(ORM, table_name).runstart >= min_sql)\
+                    .where(getattr(ORM, table_name).runend - getattr(ORM, table_name).runstart <= max_sql)\
+                    .count()
+        elif min_sql:
+            rows = table.select()\
+                    .where(getattr(getattr(ORM, table_name), idtype) == id)\
+                    .where(getattr(ORM, table_name).runend - getattr(ORM, table_name).runstart >= min_sql)\
+                    .count()
+        elif max_sql:
+            rows = table.select()\
+                    .where(getattr(getattr(ORM, table_name), idtype) == id)\
+                    .where(getattr(ORM, table_name).runend - getattr(ORM, table_name).runstart <= max_sql)\
+                    .count()
+        else:
+            rows = table.select()\
+                    .where(getattr(getattr(ORM, table_name), idtype) == id)\
+                    .count()
+
+        return rows
 
     def __init__(self):
         super().__init__()
@@ -359,11 +387,57 @@ class GET(APICore):
                 return JSONResponse(content={'error': f'Error while getting transactions: {e}'}, status_code=500)
 
         @app.get("/transactions/{transaction_id}", tags=['Read data'])
-        async def get_transaction_by_id(transaction_id: str):
+        async def get_transaction_by_id(transaction_id: str, filter_body: dict = Body({})):
             try:
+                now, monday, midnight, start_date, end_date, prev_start =\
+                    self.date_logic(filter_body)
+
                 self.validate_uuid4(transaction_id)
                 transaction = ORM.Transaction.get(ORM.Transaction.transactionid == transaction_id)
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)]
+                subresult = ORM.BaseModel.extract_data_from_select_dict(transaction.__dict__)
+
+                # step 1 - get list of runs for transaction
+                runs_cur = self.get_runs_for_list([transaction_id], start_date, end_date)
+                subresult['fail_cur'] = runs_cur['fail']
+                subresult['sla_cur'] = runs_cur['sla']
+
+                runs_prev = self.get_runs_for_list([transaction_id], prev_start, start_date)
+                subresult['sla_prev'] = runs_prev['sla']
+
+                runs_daily = self.get_runs_for_list([transaction_id], midnight, now)
+                subresult['sla_daily'] = runs_daily['sla']
+
+                # step 2 - get list of robots for transaction
+                robots = ORM.Transaction_Run.select(ORM.Transaction_Run.robotid)\
+                    .where(ORM.Transaction_Run.transactionid == transaction_id)
+                robot_ids = {str(robot.robotid): {} for robot in robots}
+
+                # step 3 - get runs for all robots via method and count SLA
+                for rid in robot_ids:
+                    runs = self.get_runs_for_list([rid], start_date, end_date, idtype='robotid')
+                    robot_ids[rid] |= runs
+                    robot_ids[rid]['0-30'] = self.runtime_filtering(rid, ORM.Transaction_Run, max=30)
+                    robot_ids[rid]['30-60'] = self.runtime_filtering(rid, ORM.Transaction_Run, min=30, max=60)
+                    robot_ids[rid]['60-120'] = self.runtime_filtering(rid, ORM.Transaction_Run, min=60, max=120)
+                    robot_ids[rid]['120-300'] = self.runtime_filtering(rid, ORM.Transaction_Run, min=120, max=300)
+                    robot_ids[rid]['300+'] = self.runtime_filtering(rid, ORM.Transaction_Run, min=300)
+
+                # step 4 - sort robots by ascending SLA
+                subresult['robots'] = dict(sorted(robot_ids.items(), key=lambda x: x[1]['sla']))
+
+                # step 5 - get list of steps for transaction
+                steps = ORM.Step_Info.select(ORM.Step_Info.stepid)\
+                    .where(ORM.Step_Info.transactionid == transaction_id)
+                step_ids = {str(step.stepid): {} for step in steps}
+
+                # step 6 - get runs for all steps via method and count SLA
+                for sid in step_ids:
+                    runs = self.get_runs_for_list([sid], start_date, end_date, idtype='stepid', table='Step_Run')
+                    step_ids[sid] |= runs
+
+                # step 7 - sort steps by ascending SLA
+                subresult['steps'] = dict(sorted(step_ids.items(), key=lambda x: x[1]['sla']))
+
                 return JSONResponse(content={'transaction': self.json_reserialize(subresult)})
 
             except Exception as e:

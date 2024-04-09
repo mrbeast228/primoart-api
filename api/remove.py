@@ -13,7 +13,7 @@ class DELETE(APICore):
         async def delete_robot(robot_id: str):
             try:
                 self.validate_uuid4(robot_id)
-                ORM.Robots.delete().where(ORM.Robots.id == robot_id).execute()
+                ORM.Robots.delete().where(ORM.Robots.robotid == robot_id).execute()
                 return JSONResponse(content={'message': f'Robot {robot_id} deleted successfully!'})
 
             except Exception as e:
@@ -23,7 +23,7 @@ class DELETE(APICore):
         async def delete_process(process_id: str):
             try:
                 self.validate_uuid4(process_id)
-                ORM.Process.delete().where(ORM.Process.id == process_id).execute()
+                ORM.Process.delete().where(ORM.Process.processid == process_id).execute()
                 return JSONResponse(content={'message': f'Process {process_id} deleted successfully!'})
 
             except Exception as e:
@@ -33,7 +33,7 @@ class DELETE(APICore):
         async def delete_service(service_id: str):
             try:
                 self.validate_uuid4(service_id)
-                ORM.Service.delete().where(ORM.Service.id == service_id).execute()
+                ORM.Service.delete().where(ORM.Service.serviceid == service_id).execute()
                 return JSONResponse(content={'message': f'Service {service_id} deleted successfully!'})
 
             except Exception as e:
@@ -43,7 +43,7 @@ class DELETE(APICore):
         async def delete_transaction(transaction_id: str):
             try:
                 self.validate_uuid4(transaction_id)
-                ORM.Transaction.delete().where(ORM.Transaction.id == transaction_id).execute()
+                ORM.Transaction.delete().where(ORM.Transaction.transactionid == transaction_id).execute()
                 return JSONResponse(content={'message': f'Transaction {transaction_id} deleted successfully!'})
 
             except Exception as e:
@@ -53,7 +53,7 @@ class DELETE(APICore):
         async def delete_step(step_id: str):
             try:
                 self.validate_uuid4(step_id)
-                ORM.Step_Info.delete().where(ORM.Step_Info.id == step_id).execute()
+                ORM.Step_Info.delete().where(ORM.Step_Info.stepid == step_id).execute()
                 return JSONResponse(content={'message': f'Step {step_id} deleted successfully!'})
 
             except Exception as e:
@@ -63,7 +63,7 @@ class DELETE(APICore):
         async def delete_run(run_id: str):
             try:
                 self.validate_uuid4(run_id)
-                ORM.Transaction_Run.delete().where(ORM.Transaction_Run.id == run_id).execute()
+                ORM.Transaction_Run.delete().where(ORM.Transaction_Run.transactionrunid == run_id).execute()
                 return JSONResponse(content={'message': f'Run {run_id} deleted successfully!'})
 
             except Exception as e:

@@ -42,18 +42,18 @@ class GET(APICore):
         return self.extract_page(rows, page, per_page)
 
     @staticmethod
-    def get_runs_for_list(trans_ids, start, end):
+    def get_runs_for_list(ids, start, end, idtype='transactionid'):
         result = {'ok': 0, 'warning': 0, 'fail': 0}
-        if isinstance(trans_ids, dict):
-            lst = list(trans_ids.keys())
-        elif isinstance(trans_ids, list):
-            lst = trans_ids
+        if isinstance(ids, dict):
+            lst = list(ids.keys())
+        elif isinstance(ids, list):
+            lst = ids
         else:
-            raise TypeError('Invalid type for transaction IDs list')
+            raise TypeError('Invalid type for IDs list')
 
         for r in result:
             result[r] = ORM.Transaction_Run.select()\
-                .where(ORM.Transaction_Run.transactionid << lst)\
+                .where(getattr(ORM.Transaction_Run, idtype) << lst)\
                 .where(ORM.Transaction_Run.runresult == r.upper())\
                 .where(ORM.Transaction_Run.runstart >= start)\
                 .where(ORM.Transaction_Run.runend <= end)\
@@ -63,7 +63,7 @@ class GET(APICore):
         try:
             result['avg'] = ORM.Transaction_Run.select(
                 fn.AVG(ORM.Transaction_Run.runend - ORM.Transaction_Run.runstart))\
-                .where(ORM.Transaction_Run.transactionid << lst)\
+                .where(getattr(ORM.Transaction_Run, idtype) << lst)\
                 .where(ORM.Transaction_Run.runstart >= start)\
                 .where(ORM.Transaction_Run.runend <= end).scalar().total_seconds()
         except AttributeError: # no runs on required range
@@ -120,11 +120,57 @@ class GET(APICore):
                 return JSONResponse(content={'error': f'Error while getting robots: {e}'}, status_code=500)
 
         @app.get("/robots/{robot_id}", tags=['Read data'])
-        async def get_robot_by_id(robot_id: str):
+        async def get_robot_by_id(robot_id: str, filter_body: dict = Body({})):
             try:
+                now, monday, midnight, start_date, end_date, prev_start =\
+                    self.date_logic(filter_body)
+
                 self.validate_uuid4(robot_id)
                 robot = ORM.Robots.get(ORM.Robots.robotid == robot_id)
-                subresult = [ORM.BaseModel.extract_data_from_select_dict(robot.__dict__)]
+                subresult = ORM.BaseModel.extract_data_from_select_dict(robot.__dict__)
+
+                # step 1 - get list of runs for robot (directly by 'robotid')
+                runs_cur = self.get_runs_for_list([robot_id], start_date, end_date, idtype='robotid')
+                subresult['fail_cur'] = runs_cur['fail']
+                subresult['sla_cur'] = runs_cur['sla']
+
+                runs_prev = self.get_runs_for_list([robot_id], prev_start, start_date, idtype='robotid')
+                subresult['sla_prev'] = runs_prev['sla']
+
+                runs_daily = self.get_runs_for_list([robot_id], midnight, now, idtype='robotid')
+                subresult['sla_daily'] = runs_daily['sla']
+
+                # step 2 - run day-by-day starting from start_date with time dropped to 00:00:00
+                subresult['runs_daily'] = {}
+                day = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
+                one_day_diff = datetime.timedelta(days=1)
+                while day < end_date:
+                    runs = self.get_runs_for_list([robot_id], day, day + one_day_diff, idtype='robotid')
+                    subresult['runs_daily'][day.strftime('%Y-%m-%d')] = runs
+                    day += one_day_diff
+
+                # step 3 - create list of unique transaction IDs based on list of run IDs
+                runs = ORM.Transaction_Run.select(ORM.Transaction_Run.transactionid)\
+                    .where(ORM.Transaction_Run.robotid == robot_id)
+                transaction_ids = {str(run.transactionid): {} for run in runs}
+
+                # step 4 - get runs for all transactions via method and count SLA
+                subresult['trans_ok'] = 0
+                subresult['trans_warning'] = 0
+                subresult['trans_fail'] = 0
+                for tid in transaction_ids:
+                    runs = self.get_runs_for_list([tid], start_date, end_date)
+                    if runs['fail']:
+                        subresult['trans_fail'] += 1
+                    elif runs['warning']:
+                        subresult['trans_warning'] += 1
+                    else:
+                        subresult['trans_ok'] += 1
+                    transaction_ids[tid] |= runs
+
+                # step 5 - sort transactions by ascending SLA
+                subresult['transactions'] = dict(sorted(transaction_ids.items(), key=lambda x: x[1]['sla']))
+
                 return JSONResponse(content={'robot': self.json_reserialize(subresult)})
 
             except Exception as e:

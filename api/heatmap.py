@@ -44,7 +44,7 @@ class MatrixGET(BaseGET):
 
                 # step 1 - prepare heatmap array 7x24 with -1 by default
                 start_day = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
-                heatmap = [[-1 for _ in range(24)] for _ in range(7)]
+                heatmap = [[{} for _ in range(24)] for _ in range(7)]
                 one_hour_diff = datetime.timedelta(hours=1)
 
                 # step 2 - start filling heatmap with data
@@ -54,8 +54,7 @@ class MatrixGET(BaseGET):
                     if current_hour < start_date: # filter may start not from midnight
                         continue
                     run_data = self.get_runs_for_list(transaction_ids, current_hour, current_hour + one_hour_diff)
-                    avg = run_data['avg'] if run_data['total'] else -1 # keep unfilled part of heatmap as -1
-                    heatmap[current_hour.weekday()][current_hour.hour] = avg
+                    heatmap[current_hour.weekday()][current_hour.hour] = run_data # kepp all data for range
 
                 return JSONResponse(content={'heatmap': heatmap})
 

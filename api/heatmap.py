@@ -39,12 +39,8 @@ class MatrixGET(BaseGET):
                     raise KeyError('No process ID, service ID or transaction ID provided')
 
 
-                # step 0.1 - subtract 1 second from end date to solve problems with 00:00:00
-                end_date -= datetime.timedelta(seconds=1)
-
-                # step 1 - prepare heatmap array 7x24 with -1 by default
+                heatmap = []
                 start_day = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
-                heatmap = [[{} for _ in range(24)] for _ in range(7)]
                 one_hour_diff = datetime.timedelta(hours=1)
 
                 # step 2 - start filling heatmap with data
@@ -54,7 +50,11 @@ class MatrixGET(BaseGET):
                     if current_hour < start_date: # filter may start not from midnight
                         continue
                     run_data = self.get_runs_for_list(transaction_ids, current_hour, current_hour + one_hour_diff)
-                    heatmap[current_hour.weekday()][current_hour.hour] = run_data # kepp all data for range
+                    heatmap.append({
+                        "time": int(current_hour.timestamp() * 1000),
+                        "value": run_data["avg"],
+                    })
+                    # heatmap[current_hour.weekday()][current_hour.hour] = run_data # kepp all data for range
 
                 return JSONResponse(content={'heatmap': heatmap})
 

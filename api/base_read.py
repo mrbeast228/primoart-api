@@ -23,7 +23,7 @@ class BaseGET(APICore):
                     rows = table.select().where(table.runstart >= start_date,
                                                 table.runend <= end_date)
                 else:
-                    rows = ORM.Robots.select().where(table.createddatetime >= start_date,
+                    rows = table.select().where(table.createddatetime >= start_date,
                                                      table.createddatetime <= end_date)
             else:
                 raise KeyError

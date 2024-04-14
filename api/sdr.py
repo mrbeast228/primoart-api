@@ -292,3 +292,30 @@ class SingleGET(BaseGET):
 
             except Exception as e:
                 return JSONResponse(content={'error': f'Error while getting run by id: {e}'}, status_code=500)
+
+        @app.get("/global_sla", tags=['Read dynamic data'])
+        async def get_global_sla(filter_body: dict = Body({})):
+            try:
+                now, monday, midnight, start_date, end_date, prev_start =\
+                    self.date_logic(filter_body)
+
+                # step 1 - get all transactions
+                transactions = ORM.Transaction.select(ORM.Transaction.transactionid)
+                transaction_ids = [str(transaction.transactionid) for transaction in transactions]
+
+                # step 2 - get SLA for current, prev and daily
+                subresult = {}
+                runs_cur = self.get_runs_for_list(transaction_ids, start_date, end_date)
+                subresult['fail_cur'] = runs_cur['fail']
+                subresult['sla_cur'] = runs_cur['sla']
+
+                runs_prev = self.get_runs_for_list(transaction_ids, prev_start, start_date)
+                subresult['sla_prev'] = runs_prev['sla']
+
+                runs_daily = self.get_runs_for_list(transaction_ids, midnight, now)
+                subresult['sla_daily'] = runs_daily['sla']
+
+                return JSONResponse(content={'global_sla': subresult})
+
+            except Exception as e:
+                return JSONResponse(content={'error': f'Error while getting global SLAs: {e}'}, status_code=500)

@@ -74,35 +74,22 @@ class SingleGET(BaseGET):
             try:
                 now, monday, midnight, start_date, end_date, prev_start =\
                     self.date_logic(filter_body)
+                sublists = filter_body.pop('sublists', False)
 
                 self.validate_uuid4(process_id)
                 process = ORM.Process.get(ORM.Process.processid == process_id)
                 subresult = ORM.BaseModel.extract_data_from_select_dict(process.__dict__)
-
-                # step 0 - prepare variables in subresult
-                subresult['trans_daily'] = {}
 
                 # step 1 - get list of services for process
                 services = ORM.Service.select()\
                     .where(ORM.Service.processid == process_id)
                 service_ids = {str(service.serviceid): {} for service in services}
 
-                global_trans_ids = []
-                for service_id in service_ids:
-                    # step 2 - get list of transactions for each service
-                    transactions = ORM.Transaction.select(ORM.Transaction.transactionid)\
-                        .where(ORM.Transaction.serviceid == service_id)
-                    transaction_ids = [str(transaction.transactionid) for transaction in transactions]
-                    global_trans_ids.extend(transaction_ids)
+                # step 1.1 - get list of transactions for each service in list
+                global_trans_ids = list(ORM.Transaction.select(ORM.Transaction.transactionid)\
+                    .where(ORM.Transaction.serviceid << list(service_ids.keys())))
 
-                    # step 3 - select OK, WARNING, FAIL only for current date range
-                    runs = self.get_runs_for_list(transaction_ids, start_date, end_date)
-                    service_ids[service_id] |= runs # update dict with runs
-
-                # step 4 - sort services by ascending SLA
-                subresult['services'] = dict(sorted(service_ids.items(), key=lambda x: x[1]['sla']))
-
-                # step 5 - get SLA for current, prev and daily
+                # step 2 - get SLA for current, prev and daily
                 runs_cur = self.get_runs_for_list(global_trans_ids, start_date, end_date)
                 subresult['fail_cur'] = runs_cur['fail']
                 subresult['sla_cur'] = runs_cur['sla']
@@ -113,7 +100,25 @@ class SingleGET(BaseGET):
                 runs_daily = self.get_runs_for_list(global_trans_ids, midnight, now)
                 subresult['sla_daily'] = runs_daily['sla']
 
+                # we should be able to not get sublists when not needed
+                if not sublists:
+                    return JSONResponse(content={'process': self.json_reserialize(subresult)})
+
+                for service_id in service_ids:
+                    # step 3 - get list of transactions for each service
+                    transactions = ORM.Transaction.select(ORM.Transaction.transactionid)\
+                        .where(ORM.Transaction.serviceid == service_id)
+                    transaction_ids = [str(transaction.transactionid) for transaction in transactions]
+
+                    # step 4 - select OK, WARNING, FAIL only for current date range
+                    runs = self.get_runs_for_list(transaction_ids, start_date, end_date)
+                    service_ids[service_id] |= runs # update dict with runs
+
+                # step 5 - sort services by ascending SLA
+                subresult['services'] = dict(sorted(service_ids.items(), key=lambda x: x[1]['sla']))
+
                 # step 6 - run day-by-day starting from start_date with time dropped to 00:00:00
+                subresult['trans_daily'] = {}
                 day = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
                 one_day_diff = datetime.timedelta(days=1)
                 while day < end_date:
@@ -130,6 +135,7 @@ class SingleGET(BaseGET):
             try:
                 now, monday, midnight, start_date, end_date, prev_start =\
                     self.date_logic(filter_body)
+                sublists = filter_body.pop('sublists', False)
 
                 self.validate_uuid4(service_id)
                 service = ORM.Service.get(ORM.Service.serviceid == service_id)
@@ -150,6 +156,10 @@ class SingleGET(BaseGET):
 
                 runs_daily = self.get_runs_for_list(transaction_ids, midnight, now)
                 subresult['sla_daily'] = runs_daily['sla']
+
+                # we should be able to not get sublists when not needed
+                if not sublists:
+                    return JSONResponse(content={'service': self.json_reserialize(subresult)})
 
                 # step 3 - for each transaction check if there're any WARNING or FAIL runs
                 subresult['trans_ok'] = 0
@@ -186,6 +196,7 @@ class SingleGET(BaseGET):
             try:
                 now, monday, midnight, start_date, end_date, prev_start =\
                     self.date_logic(filter_body)
+                sublists = filter_body.pop('sublists', False)
 
                 self.validate_uuid4(transaction_id)
                 transaction = ORM.Transaction.get(ORM.Transaction.transactionid == transaction_id)
@@ -201,6 +212,10 @@ class SingleGET(BaseGET):
 
                 runs_daily = self.get_runs_for_list([transaction_id], midnight, now)
                 subresult['sla_daily'] = runs_daily['sla']
+
+                # we should be able to not get sublists when not needed
+                if not sublists:
+                    return JSONResponse(content={'transaction': self.json_reserialize(subresult)})
 
                 # step 2 - get list of robots for transaction
                 robots = ORM.Transaction_Run.select(ORM.Transaction_Run.robotid)\

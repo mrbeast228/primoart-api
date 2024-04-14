@@ -1,5 +1,6 @@
 import datetime
 
+from peewee import fn
 from fastapi import Body
 from starlette.responses import JSONResponse
 
@@ -17,6 +18,7 @@ class MatrixGET(BaseGET):
             try:
                 now, monday, midnight, start_date, end_date, prev_start =\
                     self.date_logic(filter_body)
+                filtered = True
 
                 # step 0 - determine filtering type - by process or by service
                 process_id = filter_body.pop('processid', None)
@@ -36,8 +38,7 @@ class MatrixGET(BaseGET):
                 elif transaction_id:
                     transaction_ids = [transaction_id]
                 else:
-                    raise KeyError('No process ID, service ID or transaction ID provided')
-
+                    filtered = False
 
                 heatmap = []
                 start_day = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
@@ -49,10 +50,18 @@ class MatrixGET(BaseGET):
                     current_hour += one_hour_diff
                     if current_hour < start_date: # filter may start not from midnight
                         continue
-                    run_data = self.get_runs_for_list(transaction_ids, current_hour, current_hour + one_hour_diff)
+                    if filtered:
+                        run_data = self.get_runs_for_list(transaction_ids, current_hour, current_hour + one_hour_diff)['avg']
+                    else:
+                        try:
+                            run_data = ORM.Transaction_Run.select(fn.AVG(ORM.Transaction_Run.runend - ORM.Transaction_Run.runstart))\
+                                .where(ORM.Transaction_Run.runstart >= current_hour)\
+                                .where(ORM.Transaction_Run.runend <= current_hour + one_hour_diff).scalar().total_seconds()
+                        except AttributeError: # no runs on required range
+                            run_data = 0
                     heatmap.append({
                         "time": int(current_hour.timestamp() * 1000),
-                        "value": run_data["avg"],
+                        "value": run_data,
                     })
                     # heatmap[current_hour.weekday()][current_hour.hour] = run_data # kepp all data for range
 

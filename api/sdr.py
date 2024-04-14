@@ -65,6 +65,8 @@ class SingleGET(BaseGET):
                     else:
                         subresult['trans_ok'] += 1
                     transaction_ids[tid] |= runs
+                    transaction_ids[tid]['name'] = ORM.Transaction.select(ORM.Transaction.name)\
+                        .where(ORM.Transaction.transactionid == tid).scalar()
 
                 # step 5 - sort transactions by ascending SLA
                 subresult['transactions'] = dict(sorted(transaction_ids.items(), key=lambda x: x[1]['sla']))

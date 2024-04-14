@@ -9,7 +9,7 @@
 
 Для SDR (единичные элементы с динамическими данными) - тело запроса GET должно содержать `start` и `end` строки конвертируемые в datetime. Примеры результатов - TODO
 
-Для `/runs/heatmap` также требуется фильтр `transactionid`, `serviceid` или `projectid` для фильтрации данных
+Для `/runs/heatmap` могут быть использованы фильтры `transactionid`, `serviceid`, `projectid` или `robotid` для фильтрации данных
 
 ## Использование
 ```shell

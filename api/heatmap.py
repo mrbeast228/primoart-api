@@ -23,6 +23,7 @@ class MatrixGET(BaseGET):
                 # step 0 - determine filtering type - by process or by service
                 process_id = filter_body.pop('processid', None)
                 service_id = filter_body.pop('serviceid', None)
+                robot_id = filter_body.pop('robotid', None)
                 transaction_id = filter_body.pop('transactionid', None)
                 if service_id:
                     transactions = ORM.Transaction.select(ORM.Transaction.transactionid)\
@@ -34,6 +35,10 @@ class MatrixGET(BaseGET):
                     service_ids = [str(service.serviceid) for service in services]
                     transactions = ORM.Transaction.select(ORM.Transaction.transactionid)\
                         .where(ORM.Transaction.serviceid << service_ids)
+                    transaction_ids = [str(transaction.transactionid) for transaction in transactions]
+                elif robot_id:
+                    transactions = ORM.Transaction_Run.select(ORM.Transaction_Run.transactionid)\
+                        .where(ORM.Transaction_Run.robotid == robot_id)
                     transaction_ids = [str(transaction.transactionid) for transaction in transactions]
                 elif transaction_id:
                     transaction_ids = [transaction_id]

@@ -17,6 +17,7 @@ class SingleGET(BaseGET):
             try:
                 now, monday, midnight, start_date, end_date, prev_start =\
                     self.date_logic(filter_body)
+                sublists = filter_body.pop('sublists', False)
 
                 self.validate_uuid4(robot_id)
                 robot = ORM.Robots.get(ORM.Robots.robotid == robot_id)
@@ -32,6 +33,10 @@ class SingleGET(BaseGET):
 
                 runs_daily = self.get_runs_for_list([robot_id], midnight, now, idtype='robotid')
                 subresult['sla_daily'] = runs_daily['sla']
+
+                # we should be able to not get sublists when not needed
+                if not sublists:
+                    return JSONResponse(content={'robot': self.json_reserialize(subresult)})
 
                 # step 2 - run day-by-day starting from start_date with time dropped to 00:00:00
                 subresult['runs_daily'] = {}

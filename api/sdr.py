@@ -232,7 +232,8 @@ class SingleGET(BaseGET):
                 # step 2 - get list of robots for transaction
                 robots = ORM.Transaction_Run.select(ORM.Transaction_Run.robotid)\
                     .where(ORM.Transaction_Run.transactionid == transaction_id)
-                robot_ids = {str(robot.robotid): {} for robot in robots}
+                robot_ids = {str(robot.robotid): {'name': ORM.Robots.select(ORM.Robots.name)\
+                    .where(ORM.Robots.robotid == robot.robotid).scalar()} for robot in robots}
 
                 # step 3 - get runs for all robots via method and count SLA
                 for rid in robot_ids:

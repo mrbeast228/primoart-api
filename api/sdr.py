@@ -214,6 +214,11 @@ class SingleGET(BaseGET):
                 subresult['fail_cur'] = runs_cur['fail']
                 subresult['sla_cur'] = runs_cur['sla']
 
+                # step 1.1 - specific for transaction - avg/min/max runtime
+                subresult['min_cur'] = runs_cur['min']
+                subresult['max_cur'] = runs_cur['max']
+                subresult['avg_cur'] = runs_cur['avg']
+
                 runs_prev = self.get_runs_for_list([transaction_id], prev_start, start_date)
                 subresult['sla_prev'] = runs_prev['sla']
 

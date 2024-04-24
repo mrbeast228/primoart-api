@@ -68,3 +68,23 @@ class APICore:
 
         return [ORM.BaseModel.extract_data_from_select_dict(el.__dict__)
                 for el in select.paginate(page, per_page)]
+
+    @staticmethod
+    def name_to_id(table_name, obj_name):
+        table = getattr(ORM, table_name.capitalize())
+        # get f'{table_name}id' from table where name == obj_name
+        return table.select(getattr(table, f'{table_name}id')).where(table.name == obj_name).scalar()
+
+    @staticmethod
+    def name_converter(target, parents):
+        for parent in parents:
+            if f'{parent}id' in target:
+                pass
+            elif f'{parent}_name' in target:
+                target[f'{parent}id'] = APICore.name_to_id(parent, target[f'{parent}_name'])
+                target.pop(f'{parent}_name')
+            elif f'{parent}name' in target:
+                target[f'{parent}id'] = APICore.name_to_id(parent, target[f'{parent}name']) # same as above
+                target.pop(f'{parent}name')
+            else:
+                raise ValueError(f'Missing {parent}id or {parent}_name in {target}!')

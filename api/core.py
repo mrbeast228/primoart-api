@@ -71,7 +71,14 @@ class APICore:
 
     @staticmethod
     def name_to_id(table_name, obj_name):
-        table = getattr(ORM, table_name.capitalize())
+        static_table_naming_relation = {
+            'robot': ORM.Robots,
+            'process': ORM.Process,
+            'service': ORM.Service,
+            'transaction': ORM.Transaction,
+            'step': ORM.Step_Info
+        }
+        table = static_table_naming_relation[table_name]
         # get f'{table_name}id' from table where name == obj_name
         return table.select(getattr(table, f'{table_name}id')).where(table.name == obj_name).scalar()
 

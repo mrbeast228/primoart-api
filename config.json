@@ -1,0 +1,15 @@
+{
+  "db_name": "primoart",
+  "db_host": "172.17.0.1",
+  "db_port": "5432",
+  "db_user": "primo",
+  "db_password": "primo",
+  "db_schema": "primo",
+  "api_endpoint": "0.0.0.0",
+  "api_port": 8000,
+  "cors_origins": "*",
+  "logs_dir": "logs",
+  "screenshots_dir": "screenshots",
+  "mvp_min_runs": 100,
+  "mvp_create_artifacts": false
+}

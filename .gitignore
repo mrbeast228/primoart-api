@@ -1,0 +1,12 @@
+# IDEA files
+.idea/
+
+# PostgreSQL data
+pgdata/*
+
+# Python cache
+**/__pycache__/
+
+# Logs and screenshots
+logs/*
+screenshots/*

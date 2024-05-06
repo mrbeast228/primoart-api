@@ -1,0 +1,1428 @@
+{
+	"info": {
+		"_postman_id": "5ecbdbad-8705-490e-8f1e-2976112da178",
+		"name": "PrimoArt",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34086638"
+	},
+	"item": [
+		{
+			"name": "processes",
+			"item": [
+				{
+					"name": "GET processes",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/processes",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"processes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET processes with filter",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"createdby\": \"Maxim Demichev\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/processes",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"processes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET process by id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/processes/e9846100-46a3-475a-bdbb-2cec9698583a",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"processes",
+								"e9846100-46a3-475a-bdbb-2cec9698583a"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE process",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"processes\": [\r\n    {\r\n      \"name\": \"Тестовый процесс ПРИМО\",\r\n      \"description\": \"\",\r\n      \"createdby\": \"Maxim Demichev\"\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/processes",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"processes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE process",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"process_patch\": {\r\n        \"name\": \"Тестовый процесс ПРИМО\"\r\n    }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/processes/e9846100-46a3-475a-bdbb-2cec9698583a",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"processes",
+								"e9846100-46a3-475a-bdbb-2cec9698583a"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE process",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{enpoint}}/processes/e9846100-46a3-475a-bdbb-2cec9698583a",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"processes",
+								"e9846100-46a3-475a-bdbb-2cec9698583a"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "services",
+			"item": [
+				{
+					"name": "GET services",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/services",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"services"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET services with filter",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"createdby\": \"Admin\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/services",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"services"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET service by id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/services/cfcd51a2-8b45-454a-954d-af9770ea17d7",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"services",
+								"cfcd51a2-8b45-454a-954d-af9770ea17d7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE service",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"services\": [\r\n    {\r\n      \"processid\": \"ae808864-4b32-47f7-bbc3-db9b71ada8e4\",\r\n      \"name\": \"Сервис тестирования транзакций\",\r\n      \"description\": \"\",\r\n      \"state\": \"active\",\r\n      \"createdby\": \"Admin\"\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/services",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"services"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE service",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"service_patch\": {\r\n    \"name\": \"Сервис переименованный\",\r\n    \"description\": \"\"\r\n  }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/services/88c50d31-3363-4153-abfc-ef7582872ad9",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"services",
+								"88c50d31-3363-4153-abfc-ef7582872ad9"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE service",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{enpoint}}/services/998a69ce-f486-4f82-b91b-d2b7d95b3e60",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"services",
+								"998a69ce-f486-4f82-b91b-d2b7d95b3e60"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "robots",
+			"item": [
+				{
+					"name": "GET robots",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/robots",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"robots"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET robots with filter",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"createdby\": \"Admin\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/robots",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"robots"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET robot by id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/robots/cfcd51a2-8b45-454a-954d-af9770ea17d7",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"robots",
+								"cfcd51a2-8b45-454a-954d-af9770ea17d7"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE robot",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"robots\": [\r\n    {\r\n      \"name\": \"Тестовый робот\",\r\n      \"city\": \"New York\",\r\n      \"latitude\": 40.7128,\r\n      \"ipaddr\": \"192.168.20.30\",\r\n      \"longitude\": -74.006,\r\n      \"createdby\": \"Admin\"\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/robots",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"robots"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE robot",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"robot_patch\": {\r\n    \"name\": \"Робот переименованный\",\r\n    \"city\": \"Новый город\"\r\n  }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/robots/c96903c9-64b4-4691-b585-4fc76c7ec6fd",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"robots",
+								"c96903c9-64b4-4691-b585-4fc76c7ec6fd"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE robot",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{enpoint}}/robots/fa217c79-a5d8-4792-97f8-c19611c727e8",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"robots",
+								"fa217c79-a5d8-4792-97f8-c19611c727e8"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "transactions",
+			"item": [
+				{
+					"name": "GET transactions",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/transactions",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET transactions with filter",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"createdby\": \"Admin\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/transactions",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET transaction by id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/transactions?transactionid=d372e3a4-33a9-4eeb-af9a-143045fec504",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "transactionid",
+									"value": "d372e3a4-33a9-4eeb-af9a-143045fec504"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE transaction",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"transactions\": [\r\n    {\r\n      \"serviceid\": \"37077a5d-5580-43fb-ac96-66bf9096a697\",\r\n      \"name\": \"Работа с документов Word\",\r\n      \"description\": \"\",\r\n      \"createdby\": \"Admin\",\r\n      \"state\": \"ACTIVE\"\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/transactions",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE transaction",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"transaction_patch\": {\r\n    \"name\": \"Работа с документом Word\",\r\n    \"description\": \"\"\r\n  }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/transactions/ee7c516e-d441-4138-b5ee-d17eb4addf8a",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"transactions",
+								"ee7c516e-d441-4138-b5ee-d17eb4addf8a"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE transaction",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{enpoint}}/transactions/37b31009-75e3-4b94-98a9-e686c57b3a6f",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"transactions",
+								"37b31009-75e3-4b94-98a9-e686c57b3a6f"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "steps",
+			"item": [
+				{
+					"name": "GET steps",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/steps",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"steps"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET steps with filter",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"createdby\": \"Admin\",\r\n  \"transactionid\": \"ee7c516e-d441-4138-b5ee-d17eb4addf8a\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/steps",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"steps"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET step by id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/steps?stepid=c00180dd-55c5-469d-aae1-12009132ac81",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"steps"
+							],
+							"query": [
+								{
+									"key": "stepid",
+									"value": "c00180dd-55c5-469d-aae1-12009132ac81"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE step",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"steps\": [\r\n    {\r\n      \"transactionid\": \"ee7c516e-d441-4138-b5ee-d17eb4addf8a\",\r\n      \"name\": \"Открытие приложения\",\r\n      \"description\": \"\",\r\n      \"createdby\": \"Admin\"\r\n    },\r\n    {\r\n      \"transactionid\": \"ee7c516e-d441-4138-b5ee-d17eb4addf8a\",\r\n      \"name\": \"Создание нового документа\",\r\n      \"description\": \"\",\r\n      \"createdby\": \"Admin\"\r\n    },\r\n    {\r\n      \"transactionid\": \"ee7c516e-d441-4138-b5ee-d17eb4addf8a\",\r\n      \"name\": \"Ввод данных\",\r\n      \"description\": \"\",\r\n      \"createdby\": \"Admin\"\r\n    },\r\n    {\r\n      \"transactionid\": \"ee7c516e-d441-4138-b5ee-d17eb4addf8a\",\r\n      \"name\": \"Сохранение документа\",\r\n      \"description\": \"\",\r\n      \"createdby\": \"Admin\"\r\n    },\r\n    {\r\n      \"transactionid\": \"ee7c516e-d441-4138-b5ee-d17eb4addf8a\",\r\n      \"name\": \"Закрытие приложения\",\r\n      \"description\": \"\",\r\n      \"createdby\": \"Admin\"\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/steps",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"steps"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE step",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"step_patch\": {\r\n    \"name\": \"Переименованный тестовый шаг выполнения\",\r\n    \"description\": \"\"\r\n  }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/steps/c00180dd-55c5-469d-aae1-12009132ac81",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"steps",
+								"c00180dd-55c5-469d-aae1-12009132ac81"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE step",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{enpoint}}/steps/c00180dd-55c5-469d-aae1-12009132ac81",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"steps",
+								"c00180dd-55c5-469d-aae1-12009132ac81"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "runs",
+			"item": [
+				{
+					"name": "GET runs",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/runs",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"runs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET step_runs",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"transactionrunid\": \"24588978-b967-474a-bf9b-f98c9e882bb9\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/step_runs",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"step_runs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET runs with filter",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"runresult\": \"OK\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/runs",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"runs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET run by id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/runs/f20eef5a-f8dd-4fbe-a884-abe197ee7c94",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"runs",
+								"f20eef5a-f8dd-4fbe-a884-abe197ee7c94"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CREATE run",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"runs\": [\r\n    {\r\n      \"transactionid\": \"ee7c516e-d441-4138-b5ee-d17eb4addf8a\",\r\n      \"robotid\": \"c6b898d1-eb59-4a0d-93c7-8a037c56902f\",\r\n      \"runstart\": \"2024-02-14 17:29:28.198530\",\r\n      \"runend\": \"2024-02-14 17:29:28.542531\",\r\n      \"runresult\": \"OK\",\r\n      \"errorcode\": 0,\r\n      \"log\": \"\",\r\n      \"screenshot\": \"\",\r\n      \"step_runs\": [\r\n        {\r\n          \"stepid\": \"2c476fd3-e23c-43b0-8b7e-835073762f98\",\r\n          \"runstart\": \"2024-02-14 17:29:28.198543\",\r\n          \"runend\": \"2024-02-14 17:29:28.494544\",\r\n          \"runresult\": \"OK\",\r\n          \"errorcode\": 0\r\n        },\r\n        {\r\n          \"stepid\": \"5815c0d0-4105-454f-b1ff-7c6815d000e3\",\r\n          \"runstart\": \"2024-02-14 17:29:28.198543\",\r\n          \"runend\": \"2024-02-14 17:29:28.494544\",\r\n          \"runresult\": \"OK\",\r\n          \"errorcode\": 0\r\n        },\r\n        {\r\n          \"stepid\": \"d2365563-e904-4e24-a2ff-ab760f025583\",\r\n          \"runstart\": \"2024-02-14 17:29:28.198543\",\r\n          \"runend\": \"2024-02-14 17:29:28.494544\",\r\n          \"runresult\": \"OK\",\r\n          \"errorcode\": 0\r\n        },\r\n        {\r\n          \"stepid\": \"baa39f8a-53b2-4e32-a7a4-a7d3bbbf7fc0\",\r\n          \"runstart\": \"2024-02-14 17:29:28.198543\",\r\n          \"runend\": \"2024-02-14 17:29:28.494544\",\r\n          \"runresult\": \"OK\",\r\n          \"errorcode\": 0\r\n        },\r\n        {\r\n          \"stepid\": \"c00180dd-55c5-469d-aae1-12009132ac81\",\r\n          \"runstart\": \"2024-02-14 17:29:28.198543\",\r\n          \"runend\": \"2024-02-14 17:29:28.494544\",\r\n          \"runresult\": \"OK\",\r\n          \"errorcode\": 0\r\n        },\r\n        {\r\n          \"stepid\": \"f2f1d794-2669-4cee-8da7-db3760e40080\",\r\n          \"runstart\": \"2024-02-14 17:29:28.198543\",\r\n          \"runend\": \"2024-02-14 17:29:28.494544\",\r\n          \"runresult\": \"OK\",\r\n          \"errorcode\": 0\r\n        }\r\n      ]\r\n    }\r\n  ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/runs",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"runs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UPDATE run",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"run_patch\": {\r\n    \"name\": \"Процесс 1\",\r\n    \"description\": \"Первый процесс\"\r\n  }\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{enpoint}}/runs/d1de15c4-2b7f-4a35-80b4-8e6c41ba3384",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"runs",
+								"d1de15c4-2b7f-4a35-80b4-8e6c41ba3384"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE run",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{enpoint}}/runs/9ca7332a-3f24-4ab9-992d-2c46fce87148",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"runs",
+								"9ca7332a-3f24-4ab9-992d-2c46fce87148"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "logs",
+			"item": [
+				{
+					"name": "Load File",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"warning": "This is a duplicate header and will be overridden by the Content-Type header generated by Postman.",
+								"key": "Content-Type",
+								"value": "multipart/form-data",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/C:/Users/Максим/Downloads/test.txt"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{enpoint}}/logs",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"logs"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "screenshots",
+			"item": [
+				{
+					"name": "Load Screenshot",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"warning": "This is a duplicate header and will be overridden by the Content-Type header generated by Postman.",
+								"key": "Content-Type",
+								"value": "multipart/form-data",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/C:/Users/Максим/Downloads/test.txt"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{enpoint}}/screenshots",
+							"host": [
+								"{{enpoint}}"
+							],
+							"path": [
+								"screenshots"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "enpoint",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		}
+	]
+}
